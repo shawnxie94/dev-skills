@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write TRD"
+  short_description: "Turn a PRD into a technical design"
+  default_prompt: "Use $write-trd to turn this PRD into a concise technical design document."
