@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Plan"
+  short_description: "Implement a plan with verification loops"
+  default_prompt: "Use $implement-plan to implement this execution plan one verified step at a time."

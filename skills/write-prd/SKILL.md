@@ -57,6 +57,12 @@ Extract:
 7. Produce design inputs.
    - Summarize what the technical design or execution plan must consider next.
 
+## Handoff Rules
+
+- If technical design is requested after the PRD, hand off to `write-trd`.
+- If affected modules, data, contracts, or compatibility risks are unclear, hand off to `change-impact-analysis`.
+- If the user asks to implement immediately, recommend `write-trd` and `write-execution-plan` first unless the change is trivial.
+
 ## Output Format
 
 Answer in the user's language unless they request otherwise. Use this structure when practical:

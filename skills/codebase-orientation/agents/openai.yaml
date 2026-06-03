@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Orientation"
+  short_description: "Map a repository before changing code"
+  default_prompt: "Use $codebase-orientation to map this repository before planning changes."

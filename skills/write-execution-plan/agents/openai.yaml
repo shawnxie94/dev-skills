@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Execution Plan"
+  short_description: "Turn a TRD into an implementation DAG"
+  default_prompt: "Use $write-execution-plan to turn this TRD into an implementation DAG and subagent plan."

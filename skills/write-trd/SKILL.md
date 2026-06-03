@@ -1,6 +1,6 @@
 ---
 name: write-trd
-description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and execution-plan inputs without decomposing into detailed tasks or writing code.
+description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and write-execution-plan inputs without decomposing into detailed tasks or writing code.
 ---
 
 # Write TRD
@@ -14,7 +14,7 @@ Use this skill after the PRD or product requirements are clear enough to design 
 - Make tradeoffs explicit. Record important alternatives and why the selected approach fits the constraints.
 - Preserve compatibility. Call out existing API, data, config, migration, rollout, and rollback constraints.
 - Design for operation. Include failure handling, observability, security, and testability, not only the happy path.
-- Stop before task planning. Leave step-by-step implementation sequencing to an execution-plan skill.
+- Stop before task planning. Leave step-by-step implementation sequencing to `write-execution-plan`.
 
 ## Inputs to Look For
 
@@ -53,8 +53,16 @@ Extract:
 6. Define verification strategy.
    - List unit, integration, e2e, migration, performance, security, or observability checks required by the design.
 
-7. Prepare execution-plan inputs.
+7. Prepare `write-execution-plan` inputs.
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
+
+If affected modules, contracts, data flow, or compatibility risks are unclear, run `change-impact-analysis` before finalizing the TRD.
+
+## Handoff Rules
+
+- If the TRD is accepted and implementation sequencing is needed, hand off to `write-execution-plan`.
+- If impact scope is unclear, hand off to `change-impact-analysis`.
+- If the user asks to implement directly, recommend `write-execution-plan` first unless the change is trivial.
 
 ## TRD Checklist
 

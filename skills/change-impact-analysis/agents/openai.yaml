@@ -1,0 +1,4 @@
+interface:
+  display_name: "Change Impact Analysis"
+  short_description: "Analyze blast radius before changes"
+  default_prompt: "Use $change-impact-analysis to analyze the impact of this change before planning or committing."

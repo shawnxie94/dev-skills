@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bug Reproduction"
+  short_description: "Reproduce bugs before fixing them"
+  default_prompt: "Use $bug-reproduction to reproduce this bug and collect evidence before fixing it."

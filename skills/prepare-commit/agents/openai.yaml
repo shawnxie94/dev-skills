@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prepare Commit"
+  short_description: "Review and prepare changes for commit"
+  default_prompt: "Use $prepare-commit to review my pending changes and prepare a commit."

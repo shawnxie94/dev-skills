@@ -68,6 +68,12 @@ Use the relevant parts of this checklist:
 - Evaluation: benchmarks, acceptance criteria, ground truth, test data, human review.
 - Edge cases: abuse, adversarial input, empty states, partial failure, concurrency, migration.
 
+## Handoff Rules
+
+- If the idea is ready to become product requirements, hand off to `write-prd`.
+- If the user only needs technical options or architecture inputs, hand off to `write-trd`.
+- If the research exposes a concrete change with unclear blast radius, hand off to `change-impact-analysis`.
+
 ## Optional Subagent Strategy
 
 Use subagents only when the research scope is broad enough to benefit from parallel independent passes. Keep prompts minimal and avoid giving subagents your expected answer.

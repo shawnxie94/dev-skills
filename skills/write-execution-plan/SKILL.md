@@ -1,9 +1,9 @@
 ---
-name: execution-plan
-description: Turn a TRD, technical design, or settled implementation scope into an actionable execution plan with an implementation DAG and optional subagent parallelization plan. Use when the user asks for an execution plan, implementation plan, task breakdown, development plan, module dependency analysis, DAG, rollout sequence, or subagent concurrency plan. Focus on dependency ordering, critical path, risk-first sequencing, validation checkpoints, single-writer boundaries, and per-subagent execution plans without writing code.
+name: write-execution-plan
+description: Write an actionable execution plan from a TRD, technical design, or settled implementation scope, including an implementation DAG and optional subagent parallelization plan. Use when the user asks to write an execution plan, implementation plan, task breakdown, development plan, module dependency analysis, DAG, rollout sequence, or subagent concurrency plan. Focus on dependency ordering, critical path, risk-first sequencing, validation checkpoints, single-writer boundaries, and per-subagent execution plans without writing code.
 ---
 
-# Execution Plan
+# Write Execution Plan
 
 Use this skill after the TRD or technical direction is clear enough to plan implementation. The goal is to convert design into an executable sequence, not to re-design the system or start coding.
 
@@ -42,6 +42,7 @@ Extract:
    - Mark the critical path.
    - Mark risky nodes that should be validated early.
    - Mark shared-write nodes that should not be implemented concurrently.
+   - If implementation units or dependencies are uncertain, run `change-impact-analysis` before finalizing the DAG.
 
 4. Choose sequencing.
    - Prefer thin vertical slices when useful.
@@ -61,6 +62,12 @@ Extract:
 7. Define verification and handoff.
    - Attach verification to each phase or DAG node.
    - State what the main agent should inspect before accepting subagent output.
+
+## Handoff Rules
+
+- If the plan is accepted and implementation should begin, hand off to `implement-plan`.
+- If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `change-impact-analysis`.
+- If the plan is for a refactor, ensure `refactor-plan` has defined behavior protection first.
 
 ## Subagent Decision Rules
 
