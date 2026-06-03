@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactor Plan"
+  short_description: "Plan safe behavior-preserving refactors"
+  default_prompt: "Use $refactor-plan to plan a safe refactor before changing code."

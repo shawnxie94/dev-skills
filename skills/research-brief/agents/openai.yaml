@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Brief"
+  short_description: "Turn rough ideas into research inputs"
+  default_prompt: "Use $research-brief to research this rough idea and identify blind spots."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write PRD"
+  short_description: "Turn settled requirements into a PRD"
+  default_prompt: "Use $write-prd to turn these settled requirements into a concise PRD."
