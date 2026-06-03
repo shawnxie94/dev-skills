@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Retrospective"
+  short_description: "Improve skills from real task feedback"
+  default_prompt: "Use $skill-retrospective to improve a skill from this real task feedback."
