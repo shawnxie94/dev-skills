@@ -30,10 +30,20 @@
 
 ## Installation
 
-本仓库中的 skill 可以通过软链安装到 Codex：
+仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到 `~/.codex/skills/`（可用 `CODEX_HOME` 覆盖目标 Codex 目录）。
 
 ```bash
-ln -sfn /path/to/dev-skills/skills/<skill-name> ~/.codex/skills/<skill-name>
+cd /path/to/dev-skills
+./install.sh              # 安装（已存在则跳过，重复运行安全）
+./install.sh --dry-run    # 仅打印计划，不改磁盘
+./install.sh --uninstall  # 卸载（只移除 dev-skills 自己的软链）
 ```
 
-安装或更新后，重启 Codex 以重新加载 skills。
+新机器一键安装：
+
+```bash
+git clone git@github.com:shawnxie94/dev-skills.git ~/dev-skills
+~/dev-skills/install.sh
+```
+
+软链方式意味着后续在仓库内编辑 `SKILL.md` 或新增 skill 都会热生效，无需手动同步。
