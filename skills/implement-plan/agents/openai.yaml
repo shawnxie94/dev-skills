@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Plan"
-  short_description: "Implement a plan or ready remote task"
-  default_prompt: "Use $implement-plan to implement the provided plan, or read the single ready task in tasks/ready when no plan is provided."
+  short_description: "Implement runnable tasks safely"
+  default_prompt: "Use $implement-plan to implement the provided plan, or resolve ready tasks in tasks/ready and execute only runnable non-conflicting work."

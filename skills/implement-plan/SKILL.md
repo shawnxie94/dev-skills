@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implement an approved execution plan or remote handoff task one verified step at a time. Use when the user asks to implement, execute, carry out, or continue from a write-execution-plan output, implementation DAG, task plan, subagent plan, or tasks/ready remote task packet. When invoked in a repository without an explicit plan, check the workspace ready-task directory for a single approved remote task before asking for more context. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, task write-ownership enforcement, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
+description: Implement an approved execution plan or remote handoff task one verified step at a time. Use when the user asks to implement, execute, carry out, or continue from a write-execution-plan output, implementation DAG, task plan, subagent plan, or tasks/ready remote task packet. When invoked in a repository without an explicit plan, check the workspace ready-task directory, resolve dependencies and write conflicts, and execute only runnable tasks. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, task write-ownership enforcement, branch/worktree isolation for concurrent tasks, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
 ---
 
 # Implement Plan
@@ -16,6 +16,7 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Validate after each meaningful step, not only at the end.
 - Treat subagent output as candidate work that the main agent must review, merge, and verify.
 - Enforce remote task `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
+- Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
 
 ## Remote Task Bootstrap
@@ -27,14 +28,53 @@ When this skill is invoked in a repository without an explicit plan, task path, 
    - Otherwise use `tasks/ready/`.
 2. Look for ready remote task packets in that directory.
    - If exactly one task exists, read it and treat it as the source plan.
-   - If multiple ready tasks exist, do not choose one silently; list the task paths and ask the user to select one.
+   - If multiple ready tasks exist, read all of them, resolve dependencies, detect write conflicts, and build a runnable set before deciding execution.
    - If no ready task exists, continue normal input confirmation and ask for a plan or task.
-3. Before editing code, validate the task packet.
+3. Resolve dependencies.
+   - A task is runnable only when every `depends_on` item is already done, accepted, merged, or explicitly marked satisfied.
+   - If a dependency is not present locally and is not explicitly marked satisfied, treat it as unresolved.
+   - If a `ready` task has unmet dependencies, do not execute it; report that it should be moved back to draft/blocked or wait for the dependency.
+4. Detect conflicts and mutual exclusion.
+   - Treat overlapping `write_ownership` entries as a conflict unless the plan explicitly assigns non-overlapping subpaths.
+   - Treat matching `mutex` values as a conflict.
+   - Treat public contracts, schemas, migrations, generated artifacts, dependency manifests, lockfiles, and shared config as serial unless single-writer ownership is explicit.
+5. Decide execution mode.
+   - If exactly one runnable task remains, execute it in the current worktree only if the worktree is clean and the branch matches the task or can be safely created.
+   - If multiple runnable tasks remain and subagents are available, use subagents only when each task can run in its own git worktree and branch.
+   - If separate worktrees or subagents are not available, execute only one task and report the remaining runnable tasks.
+   - If multiple runnable tasks conflict, execute them serially in dependency or merge order.
+6. Before editing code, validate each selected task packet.
    - Require status to be `ready` or clearly approved for execution.
    - Read all `Required Context`, `sources`, and `related` artifacts that exist.
    - Respect `depends_on`; if an unmet dependency is obvious, stop and report the blocker.
    - Treat `write_ownership` as the allowed edit scope and `forbidden_writes` as hard exclusions unless the user explicitly overrides them.
-4. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
+   - Use the task packet's branch/worktree fields when present.
+7. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
+
+## Concurrent Execution
+
+Use concurrent execution only when all of these are true:
+
+- Each runnable task has satisfied dependencies.
+- `write_ownership` does not overlap.
+- `mutex` values do not overlap.
+- Each task has a dedicated branch and git worktree.
+- Each subagent receives only its task packet, required context, exclusions, verification commands, and expected feedback format.
+
+Recommended isolation pattern:
+
+```text
+main worktree
+  -> planning/review only
+
+.worktrees/<task-a>
+  -> branch task/<task-a>
+
+.worktrees/<task-b>
+  -> branch task/<task-b>
+```
+
+Do not let two agents edit the same checkout. Merge results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
 
 ## Long-Running Work
 

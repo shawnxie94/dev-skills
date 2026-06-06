@@ -37,6 +37,9 @@ docs/trd/
 plans/
 tasks/draft/
 tasks/ready/
+tasks/in-progress/
+tasks/blocked/
+tasks/done/
 decisions/
 ```
 
@@ -49,6 +52,9 @@ trd = "docs/trd"
 execution_plan = "plans"
 task_draft = "tasks/draft"
 task_ready = "tasks/ready"
+task_in_progress = "tasks/in-progress"
+task_blocked = "tasks/blocked"
+task_done = "tasks/done"
 decision = "decisions"
 ```
 
