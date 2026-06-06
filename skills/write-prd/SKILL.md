@@ -29,6 +29,28 @@ Extract:
 - Metrics, success criteria, or launch constraints.
 - Dependencies, assumptions, risks, and unresolved questions.
 
+## Document Artifact Mode
+
+Before producing the PRD, check the current working directory for `.dev-skills/config.toml`.
+
+Document artifact mode is enabled only when that file exists and contains:
+
+```toml
+[document_artifacts]
+enabled = true
+```
+
+When document artifact mode is disabled or the config is absent, keep the normal chat-output behavior.
+
+When document artifact mode is enabled:
+
+- Create or update the PRD as a managed workspace file instead of only writing it in chat.
+- Use `docs/prd/` by default, or `document_artifacts.paths.prd` when configured.
+- Use a stable, descriptive filename such as `docs/prd/<feature-slug>.md`.
+- Include frontmatter with at least `id`, `type: prd`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
+- Keep the final chat response to the file path, status, and concise summary; do not duplicate the full document unless the user asks.
+- If the file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
+
 ## PRD Workflow
 
 1. Restate the product goal.
@@ -56,6 +78,7 @@ Extract:
 
 7. Produce design inputs.
    - Summarize what the technical design or execution plan must consider next.
+   - In document artifact mode, write these sections to the PRD file before the final response.
 
 ## Handoff Rules
 

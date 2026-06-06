@@ -29,6 +29,29 @@ Extract:
 - Security, privacy, compliance, reliability, performance, and observability constraints.
 - Migration, rollout, compatibility, and rollback constraints.
 
+## Document Artifact Mode
+
+Before producing the TRD, check the current working directory for `.dev-skills/config.toml`.
+
+Document artifact mode is enabled only when that file exists and contains:
+
+```toml
+[document_artifacts]
+enabled = true
+```
+
+When document artifact mode is disabled or the config is absent, keep the normal chat-output behavior.
+
+When document artifact mode is enabled:
+
+- Create or update the TRD as a managed workspace file instead of only writing it in chat.
+- Use `docs/trd/` by default, or `document_artifacts.paths.trd` when configured.
+- Use a stable, descriptive filename such as `docs/trd/<feature-slug>.md`.
+- Include frontmatter with at least `id`, `type: trd`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
+- Link the source PRD path in `related` when one exists.
+- Keep the final chat response to the file path, status, and concise summary; do not duplicate the full document unless the user asks.
+- If the file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
+
 ## TRD Workflow
 
 1. Restate the technical goal.
@@ -55,6 +78,7 @@ Extract:
 
 7. Prepare `write-execution-plan` inputs.
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
+   - In document artifact mode, write these sections to the TRD file before the final response.
 
 If affected modules, contracts, data flow, or compatibility risks are unclear, run `change-impact-analysis` before finalizing the TRD.
 

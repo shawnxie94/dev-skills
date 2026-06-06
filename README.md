@@ -10,6 +10,62 @@
 - 可执行输出：skill 的产物应能直接进入下一步研发流程，而不是停留在泛泛建议。
 - 可组合：skills 之间能串成研发流程，而不是互相重叠。
 
+## Workspace Configuration
+
+默认情况下，skills 只在对话中输出结构化结果，不强制创建或更新文件。
+
+如果某个工作区希望把 PRD、TRD、执行计划等过程结果沉淀为可管理的文档资产，可以在当前工作目录内添加：
+
+```text
+.dev-skills/config.toml
+```
+
+最小配置：
+
+```toml
+[document_artifacts]
+enabled = true
+```
+
+开启后，支持该模式的 skill 必须把主要产物写入工作区文件，并在回复中给出文件路径和简短摘要。缺失配置文件、缺失 `document_artifacts.enabled`，或值不是 `true` 时，都按关闭处理。
+
+默认目录约定：
+
+```text
+docs/prd/
+docs/trd/
+plans/
+tasks/draft/
+tasks/ready/
+decisions/
+```
+
+可选覆盖：
+
+```toml
+[document_artifacts.paths]
+prd = "docs/prd"
+trd = "docs/trd"
+execution_plan = "plans"
+task_draft = "tasks/draft"
+task_ready = "tasks/ready"
+decision = "decisions"
+```
+
+文档资产模式下的文件应尽量使用稳定文件名，并包含可追踪元数据，例如：
+
+```yaml
+---
+id: prd-user-auth
+type: prd
+status: draft
+created_at: 2026-06-06
+updated_at: 2026-06-06
+sources: []
+related: {}
+---
+```
+
 ## Skills
 
 建议按照研发流程从上到下选择 skill。专项场景可以按需插入，例如遇到 bug 先走 `bug-reproduction`，做重构先走 `refactor-plan`，涉及影响面不清楚时插入 `change-impact-analysis`。
@@ -22,6 +78,7 @@
 | 影响面分析 | `change-impact-analysis` | 某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。 | 受影响模块、接口契约、数据/配置影响、兼容风险、测试范围和后续 skill handoff。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
 | 执行计划 | `write-execution-plan` | 技术方案已经明确，需要拆成可执行步骤、依赖顺序和并发方案时。 | 实施 DAG、关键路径、风险优先级、验证节点、subagent 并发判断和子计划。 |
+| 远端交接 | `prepare-remote` | 执行计划已经批准或某个 DAG 节点需要委派给另一台机器、远端 Codex、GitHub Issue 或任务文件时。 | 远端任务包、来源文档引用、依赖关系、并行边界、写入所有权、验收标准和反馈格式。 |
 | 计划实现 | `implement-plan` | 已有执行计划，需要按节点实现、验证、合并 subagent 产物并推进闭环时。 | 节点级实现记录、TDD/回归/特征/手工验证选择、阶段验证结果和进度更新。 |
 | Bug 修复 | `bug-reproduction` | 用户报告 broken behavior、失败命令、失败页面、失败 API、CI 失败或回归问题时。 | 预期与实际行为、真实入口、最小复现、日志/网络/数据/状态证据、已确认事实和修复方向。 |
 | 重构 | `refactor-plan` | 需要重组代码、简化结构、解耦、抽取模块、减少重复或清理技术债时。 | 重构目标、行为保护、风险点、执行步骤、验证方式、回滚点和完成标准。 |

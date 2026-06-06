@@ -28,6 +28,30 @@ Extract:
 - Risk points: unknown APIs, data quality, concurrency, external services, performance, security, operational risk.
 - Validation options: tests, smoke checks, manual flows, logs, metrics, local or staging verification.
 
+## Document Artifact Mode
+
+Before producing the execution plan, check the current working directory for `.dev-skills/config.toml`.
+
+Document artifact mode is enabled only when that file exists and contains:
+
+```toml
+[document_artifacts]
+enabled = true
+```
+
+When document artifact mode is disabled or the config is absent, keep the normal chat-output behavior.
+
+When document artifact mode is enabled:
+
+- Create or update the execution plan as a managed workspace file instead of only writing it in chat.
+- Use `plans/` by default, or `document_artifacts.paths.execution_plan` when configured.
+- Use a stable, descriptive filename such as `plans/<feature-slug>-execution-plan.md`.
+- Include frontmatter with at least `id`, `type: execution_plan`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
+- Link source PRD/TRD paths in `related` when they exist.
+- Include a `Remote Handoff Inputs` section that identifies which plan nodes can be delegated to a remote Codex and what context, exclusions, verification commands, and acceptance criteria the remote task needs.
+- Keep the final chat response to the file path, status, and concise summary; do not duplicate the full document unless the user asks.
+- If the file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
+
 ## Planning Workflow
 
 1. Restate the implementation goal.
@@ -62,9 +86,11 @@ Extract:
 7. Define verification and handoff.
    - Attach verification to each phase or DAG node.
    - State what the main agent should inspect before accepting subagent output.
+   - In document artifact mode, write the plan and remote handoff inputs to the execution plan file before the final response.
 
 ## Handoff Rules
 
+- If the plan is approved for delegation to another machine, remote Codex, GitHub Issue, or task file, hand off to `prepare-remote`.
 - If the plan is accepted and implementation should begin, hand off to `implement-plan`.
 - If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `change-impact-analysis`.
 - If the plan is for a refactor, ensure `refactor-plan` has defined behavior protection first.

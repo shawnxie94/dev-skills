@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prepare Remote"
+  short_description: "Prepare remote Codex handoff tasks"
+  default_prompt: "Use $prepare-remote to turn this approved execution plan into remote Codex handoff tasks."
