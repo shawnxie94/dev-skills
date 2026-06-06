@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Plan"
-  short_description: "Implement a plan with verification loops"
-  default_prompt: "Use $implement-plan to implement this execution plan one verified step at a time."
+  short_description: "Implement a plan or ready remote task"
+  default_prompt: "Use $implement-plan to implement the provided plan, or read the single ready task in tasks/ready when no plan is provided."

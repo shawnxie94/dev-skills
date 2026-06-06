@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implement an approved execution plan one verified step at a time. Use when the user asks to implement, execute, carry out, or continue from a write-execution-plan output, implementation DAG, task plan, or subagent plan. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, goal-backed long-running work, subagent output review and merge, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
+description: Implement an approved execution plan or remote handoff task one verified step at a time. Use when the user asks to implement, execute, carry out, or continue from a write-execution-plan output, implementation DAG, task plan, subagent plan, or tasks/ready remote task packet. When invoked in a repository without an explicit plan, check the workspace ready-task directory for a single approved remote task before asking for more context. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, task write-ownership enforcement, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
 ---
 
 # Implement Plan
@@ -15,7 +15,26 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Keep edits scoped to the current node.
 - Validate after each meaningful step, not only at the end.
 - Treat subagent output as candidate work that the main agent must review, merge, and verify.
+- Enforce remote task `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
+
+## Remote Task Bootstrap
+
+When this skill is invoked in a repository without an explicit plan, task path, issue, or current-node context:
+
+1. Check the current working directory for `.dev-skills/config.toml`.
+   - If `document_artifacts.paths.task_ready` is configured, use that as the ready-task directory.
+   - Otherwise use `tasks/ready/`.
+2. Look for ready remote task packets in that directory.
+   - If exactly one task exists, read it and treat it as the source plan.
+   - If multiple ready tasks exist, do not choose one silently; list the task paths and ask the user to select one.
+   - If no ready task exists, continue normal input confirmation and ask for a plan or task.
+3. Before editing code, validate the task packet.
+   - Require status to be `ready` or clearly approved for execution.
+   - Read all `Required Context`, `sources`, and `related` artifacts that exist.
+   - Respect `depends_on`; if an unmet dependency is obvious, stop and report the blocker.
+   - Treat `write_ownership` as the allowed edit scope and `forbidden_writes` as hard exclusions unless the user explicitly overrides them.
+4. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
 
 ## Long-Running Work
 
@@ -41,6 +60,7 @@ If no test is practical, state the manual verification path and residual risk be
 
 1. Confirm inputs.
    - Identify the source plan, current node, scope, expected behavior, verification mode, and done criteria.
+   - If no explicit input is provided, run the remote task bootstrap before asking for more context.
    - If no plan exists, ask for or create a `write-execution-plan` first unless the work is trivial.
 
 2. Prepare verification.
