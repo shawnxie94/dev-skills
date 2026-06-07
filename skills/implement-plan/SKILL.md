@@ -31,7 +31,9 @@ When this skill is invoked in a repository without an explicit plan, task path, 
    - If multiple ready tasks exist, read all of them, resolve dependencies, detect write conflicts, and build a runnable set before deciding execution.
    - If no ready task exists, continue normal input confirmation and ask for a plan or task.
 3. Resolve dependencies.
-   - A task is runnable only when every `depends_on` item is already done, accepted, merged, or explicitly marked satisfied.
+   - Treat `parallel_group` and `feature` as the task group boundary for one requirement or feature.
+   - A task is runnable only when every `depends_on` item is already accepted, merged, or explicitly marked satisfied.
+   - Treat `done` as "implementation branch completed", not as dependency satisfaction, unless the task or repo policy explicitly says done is integrated.
    - If a dependency is not present locally and is not explicitly marked satisfied, treat it as unresolved.
    - If a `ready` task has unmet dependencies, do not execute it; report that it should be moved back to draft/blocked or wait for the dependency.
 4. Detect conflicts and mutual exclusion.
@@ -75,6 +77,22 @@ main worktree
 ```
 
 Do not let two agents edit the same checkout. Merge results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
+
+## Task Group Progression
+
+For multiple tasks from the same requirement:
+
+- Use `parallel_group` or `feature` to identify the group.
+- Keep only currently runnable tasks in `tasks/ready/`.
+- Keep approved but dependency-blocked tasks in `tasks/blocked/` when available, otherwise keep them in draft with `status: blocked`.
+- Do not execute blocked tasks even if they are part of the same feature group.
+- After a task finishes implementation, mark it `done` or report it as done, but do not automatically satisfy dependencies unless the task is accepted, merged, or explicitly approved as satisfying its dependents.
+- After a dependency is accepted or merged, scan blocked tasks in the same feature group:
+  - Promote tasks whose `depends_on` entries are all satisfied.
+  - Keep tasks blocked when any dependency remains unresolved.
+  - Run conflict and mutex checks again before executing newly promoted tasks.
+- When downstream tasks depend on upstream code, prefer creating or rebasing their worktrees from the updated base branch after the upstream merge. Avoid stacked branches unless the task packet explicitly requires them.
+- Use a final integration task when multiple branches complete one feature; it should verify the merged result rather than add broad new scope.
 
 ## Long-Running Work
 
@@ -160,6 +178,10 @@ Answer in the user's language unless they request otherwise. Use concise progres
 ## Plan Deviations
 
 - <Deviation and why it was necessary, or "None">
+
+## Task Group Updates
+
+- <Dependency satisfied, downstream tasks promoted/blocked, or "None">
 
 ## Subagent Merge Notes
 

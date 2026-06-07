@@ -14,6 +14,7 @@ Use this skill to convert an approved execution plan or settled implementation n
 - Keep every remote task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
 - Split parallel tasks only when dependencies and write boundaries are clear.
 - Put only currently executable tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
+- Model multiple tasks from the same requirement as one feature task group with a DAG, not as unrelated ready tasks.
 - Do not implement code or redesign the feature; if the plan is unclear, hand back to `write-execution-plan` or `change-impact-analysis`.
 - Do not mark a task ready for remote execution unless the user or source artifact clearly indicates approval.
 
@@ -29,6 +30,29 @@ Extract:
 - Modules, files, APIs, schemas, migrations, generated artifacts, and config that each task may touch.
 - Verification commands, manual checks, fixtures, logs, or PR review gates.
 - Target repo, target branch, branch naming, PR expectations, and feedback format.
+
+## Feature Task Groups
+
+When multiple tasks belong to the same requirement or feature:
+
+- Assign the same `parallel_group` and a stable `feature` value to all tasks.
+- Assign a `phase` that reflects the DAG layer, such as `contract`, `backend`, `frontend`, `integration`, or `cleanup`.
+- Put only root nodes with no unmet dependencies in `ready`.
+- Put approved downstream nodes in `blocked` until their dependencies are accepted or merged.
+- Add `unblocks` to each task when completing it can make downstream tasks runnable.
+- Prefer a contract-first split when possible:
+
+```text
+contract/schema/API task
+  -> backend task
+  -> integration task
+
+contract/schema/API task
+  -> frontend task
+  -> integration task
+```
+
+Do not use stacked branches by default. Prefer merging or accepting the dependency task, then creating or rebasing downstream task branches from the updated base branch.
 
 ## Document Artifact Mode
 
@@ -50,7 +74,7 @@ When document artifact mode is enabled:
 - Use `tasks/ready/` only when the task is explicitly approved for remote execution, or `document_artifacts.paths.task_ready` when configured.
 - Use `tasks/blocked/` for approved but dependency-blocked tasks when `document_artifacts.paths.task_blocked` is configured or the default directory exists; otherwise keep them in draft with `status: blocked`.
 - Use stable, descriptive filenames such as `tasks/draft/<feature-slug>-backend.md`.
-- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `depends_on`, `parallel_group`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
+- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `feature`, `phase`, `depends_on`, `unblocks`, `parallel_group`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
 - Keep the final chat response to created or updated file paths, statuses, and concise summary.
 - If a required file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
 
@@ -69,7 +93,9 @@ When document artifact mode is enabled:
    - Keep shared contracts, schemas, migrations, generated artifacts, and cross-cutting config under a single writer.
 
 3. Define dependency and parallelism rules.
+   - Build the feature group DAG before writing task files.
    - List `Depends On` for every task.
+   - List `Unblocks` for tasks that enable downstream work.
    - List `Can Run In Parallel With` only when write ownership does not overlap.
    - List `Must Not Run In Parallel With` for shared files, public contracts, database migrations, generated artifacts, or unclear boundaries.
    - Assign a `parallel_group` when multiple tasks belong to the same approved plan.
@@ -99,6 +125,7 @@ When document artifact mode is enabled:
    - If tasks are draft, state what approval is needed before moving them to ready.
    - If tasks are blocked by dependencies, state which upstream task or merge must complete first.
    - If tasks are ready, state the recommended claim or execution order.
+   - State the promotion rule for downstream tasks, for example "after `task/api-contract` is accepted, promote `task/backend` and `task/frontend` to ready."
    - If implementation should begin on the current machine, hand off to `implement-plan`; otherwise leave the task ready for remote pickup.
 
 ## Task Packet Format
@@ -118,7 +145,10 @@ related:
   prd: <path>
   trd: <path>
   execution_plan: <path>
+feature: <feature-id>
+phase: <contract|backend|frontend|integration|cleanup>
 depends_on: []
+unblocks: []
 parallel_group: <group-id>
 mutex: []
 branch: task/<remote-task-id>
@@ -149,7 +179,10 @@ forbidden_writes:
 
 ## Dependencies And Parallelism
 
+- Feature: <feature-id>
+- Phase: <phase>
 - Depends on: <tasks or "None">
+- Unblocks: <tasks or "None">
 - Can run in parallel with: <tasks or "None">
 - Must not run in parallel with: <tasks or "None">
 - Mutex: <shared resources or "None">
