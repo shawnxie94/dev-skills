@@ -11,6 +11,7 @@ Use this skill to convert an approved execution plan or settled implementation n
 
 - Treat the handoff packet as the contract between planning and execution.
 - Preserve traceability to PRD, TRD, execution plan, issues, decisions, and code context.
+- Reuse the `write-execution-plan` DAG as the source of truth; do not create a second independent DAG.
 - Keep every remote task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
 - Split parallel tasks only when dependencies and write boundaries are clear.
 - Put only currently executable tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
@@ -26,7 +27,7 @@ Extract:
 
 - Source artifacts and their file paths.
 - Approved scope and explicit non-goals.
-- DAG nodes, dependencies, critical path, risk-first nodes, and shared-write nodes.
+- Execution plan DAG nodes, dependencies, critical path, risk-first nodes, shared-write nodes, and remote handoff inputs.
 - Modules, files, APIs, schemas, migrations, generated artifacts, and config that each task may touch.
 - Verification commands, manual checks, fixtures, logs, or PR review gates.
 - Target repo, target branch, branch naming, PR expectations, and feedback format.
@@ -35,8 +36,10 @@ Extract:
 
 When multiple tasks belong to the same requirement or feature:
 
+- Start from the source execution plan DAG. If the DAG is missing, stale, or ambiguous, hand back to `write-execution-plan` instead of inventing a new one.
 - Assign the same `parallel_group` and a stable `feature` value to all tasks.
 - Assign a `phase` that reflects the DAG layer, such as `contract`, `backend`, `frontend`, `integration`, or `cleanup`.
+- Preserve the execution plan unit IDs in each task packet with `plan_unit_id`.
 - Put only root nodes with no unmet dependencies in `ready`.
 - Put approved downstream nodes in `blocked` until their dependencies are accepted or merged.
 - Add `unblocks` to each task when completing it can make downstream tasks runnable.
@@ -74,7 +77,7 @@ When document artifact mode is enabled:
 - Use `tasks/ready/` only when the task is explicitly approved for remote execution, or `document_artifacts.paths.task_ready` when configured.
 - Use `tasks/blocked/` for approved but dependency-blocked tasks when `document_artifacts.paths.task_blocked` is configured or the default directory exists; otherwise keep them in draft with `status: blocked`.
 - Use stable, descriptive filenames such as `tasks/draft/<feature-slug>-backend.md`.
-- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `feature`, `phase`, `depends_on`, `unblocks`, `parallel_group`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
+- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `plan_unit_id`, `feature`, `phase`, `depends_on`, `unblocks`, `parallel_group`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
 - Keep the final chat response to created or updated file paths, statuses, and concise summary.
 - If a required file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
 
@@ -87,13 +90,15 @@ When document artifact mode is enabled:
    - If the implementation plan is missing or too vague, hand off to `write-execution-plan`.
 
 2. Select remote task units.
-   - Start from execution plan DAG nodes.
+   - Start from execution plan DAG nodes and `Remote Handoff Inputs`.
+   - Preserve DAG unit IDs and dependencies when mapping units to remote tasks.
    - Group tightly coupled nodes into one task when separating them would create coordination overhead.
    - Split independent nodes when each can be verified and reviewed separately.
    - Keep shared contracts, schemas, migrations, generated artifacts, and cross-cutting config under a single writer.
+   - If grouping or splitting changes the source DAG shape, record the mapping and reason; if the change alters dependencies, hand back to `write-execution-plan`.
 
 3. Define dependency and parallelism rules.
-   - Build the feature group DAG before writing task files.
+   - Reuse the source execution plan DAG before writing task files.
    - List `Depends On` for every task.
    - List `Unblocks` for tasks that enable downstream work.
    - List `Can Run In Parallel With` only when write ownership does not overlap.
@@ -126,6 +131,7 @@ When document artifact mode is enabled:
    - If tasks are blocked by dependencies, state which upstream task or merge must complete first.
    - If tasks are ready, state the recommended claim or execution order.
    - State the promotion rule for downstream tasks, for example "after `task/api-contract` is accepted, promote `task/backend` and `task/frontend` to ready."
+   - State any mapping from execution plan units to remote tasks.
    - If implementation should begin on the current machine, hand off to `implement-plan`; otherwise leave the task ready for remote pickup.
 
 ## Task Packet Format
@@ -145,6 +151,7 @@ related:
   prd: <path>
   trd: <path>
   execution_plan: <path>
+plan_unit_id: <execution-plan-unit-id>
 feature: <feature-id>
 phase: <contract|backend|frontend|integration|cleanup>
 depends_on: []
@@ -179,6 +186,7 @@ forbidden_writes:
 
 ## Dependencies And Parallelism
 
+- Plan unit: <execution-plan-unit-id>
 - Feature: <feature-id>
 - Phase: <phase>
 - Depends on: <tasks or "None">
