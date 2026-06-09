@@ -62,6 +62,7 @@ Always check:
 
 Apply these only when triggered by the diff:
 
+- Data model or persistence schema changes: check the upgrade path for existing deployments, not only fresh setup. Find the project's migration, bootstrap, entrypoint, installer, seed, or backfill mechanism and verify it applies new columns/tables/indexes/constraints idempotently to an already-created database or data store. Require a focused legacy/upgrade test or an explicit manual upgrade command when the change cannot be made automatic.
 - Idempotency and retry safety: for POST, PUT, PATCH, DELETE, INSERT, UPDATE, payments, orders, notifications, and message sends, check idempotency keys, deduplication, unique constraints, UPSERTs, and duplicate side effects.
 - Resource cleanup: for file I/O, database connections, HTTP clients, pools, timers, intervals, streams, iterators, or native handles, check cleanup on success, error, early return, and cancellation paths.
 - Dependency changes: for dependency manifests or lockfiles, check maintenance status, license fit, footprint, breaking changes, deprecated API removal, and known vulnerabilities.
