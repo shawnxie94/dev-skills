@@ -1,4 +1,4 @@
 interface:
   display_name: "Codebase Orientation"
-  short_description: "Map a repository before changing code"
-  default_prompt: "Use $codebase-orientation to map this repository before planning changes."
+  short_description: "First-pass repository map before code changes"
+  default_prompt: "Use $codebase-orientation to map this repository before planning changes. Prefer it over direct graphify for first-pass orientation, run/test discovery, entry-point mapping, and current-file verification. If graphify-out/graph.json exists, query graphify first for architecture and relationship leads, then verify current facts from files."

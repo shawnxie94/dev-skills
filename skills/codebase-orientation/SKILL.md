@@ -1,6 +1,6 @@
 ---
 name: codebase-orientation
-description: Build a concise engineering map of an unfamiliar or partially-known repository before planning or changing code. Use when the user asks to understand a codebase, orient in a repo, map architecture, identify modules, find entry points, learn how to run or test a project, prepare for PRD/TRD/execution planning against an existing system, or assess where a change should be made. Focus on real files, commands, module responsibilities, data flow, dependencies, validation paths, and risk boundaries without modifying code.
+description: Build a concise engineering map of an unfamiliar or partially-known repository before planning or changing code. Prefer this skill over direct graphify for first-pass repository orientation, run/test command discovery, entry-point mapping, implementation planning inputs, and current-file verification. Use when the user asks to understand a codebase, orient in a repo, map architecture, identify modules, find entry points, learn how to run or test a project, prepare for PRD/TRD/execution planning against an existing system, or assess where a change should be made. When an existing graphify graph is available, use it only as an optional backend for architecture, relationship, and flow leads, then verify current facts from files. Focus on real files, commands, module responsibilities, data flow, dependencies, validation paths, and risk boundaries without modifying code.
 ---
 
 # Codebase Orientation
@@ -30,28 +30,44 @@ Use fast repository inspection first:
 
 Do not create or update `AGENTS.md` as part of this skill. If durable repo guidance seems useful, mention it as a separate recommendation.
 
+## Graphify Backend
+
+Use graphify as an enhancement, not a replacement for live repository inspection. For first-pass repository orientation, this skill remains the owner of the workflow even when graphify is installed.
+
+- If `graphify-out/graph.json` exists and the user's goal involves architecture, module relationships, data flow, call paths, or broad project content, query it first:
+  - `graphify query "<user's repository question>"`
+  - Use the result to prioritize which files and modules to inspect next.
+- Treat graphify results as a map of extracted relationships. Verify current run commands, test commands, entry points, config, schemas, and high-risk claims directly from repository files.
+- If graphify output conflicts with live files, trust live files and call out the graph as stale or incomplete.
+- If there is no existing graph, do not build one by default during orientation. Recommend graphify only when the repository is large, mixed with substantial docs/media, likely to need repeated exploration, or the user explicitly asks for a graph.
+- If `graphify query` is unavailable or fails, continue with normal file-based orientation and mention the fallback.
+
 ## Orientation Workflow
 
-1. Establish repository shape.
+1. Check for a graphify backend when useful.
+   - If `graphify-out/graph.json` exists and the goal benefits from relationship or flow context, run a graphify query first.
+   - Capture useful nodes, paths, communities, or source locations as leads, not final proof.
+
+2. Establish repository shape.
    - Identify language, framework, package manager, and major directories.
    - Note whether the repo is an app, library, service, monorepo, plugin, or mixed workspace.
 
-2. Identify how to run and verify.
+3. Identify how to run and verify.
    - Find install, dev server, build, lint, test, typecheck, migration, and local service commands.
    - Mark commands as confirmed from files or inferred.
 
-3. Map architecture and ownership.
+4. Map architecture and ownership.
    - Describe major modules and responsibilities.
    - Identify entry points and how requests, jobs, or user actions flow through the system.
 
-4. Map data and dependencies.
+5. Map data and dependencies.
    - Identify databases, schemas, migrations, external APIs, queues, caches, file storage, or generated artifacts.
    - Note integration boundaries and operational dependencies.
 
-5. Identify risk boundaries.
+6. Identify risk boundaries.
    - Highlight public contracts, shared schemas, auth, payments, migrations, background jobs, caching, concurrency, or deployment-sensitive areas.
 
-6. Produce next-step inputs.
+7. Produce next-step inputs.
    - Recommend which files to read next for the user's goal.
    - State what context should feed TRD, execution planning, debugging, or implementation.
 
@@ -90,6 +106,10 @@ Answer in the user's language unless they request otherwise. Use this structure 
 ## Entry Points And Flows
 
 <Main runtime entry points and key data/request/user flows>
+
+## Graphify Leads
+
+<If graphify was used, summarize graph-derived leads and which ones were verified from live files. Omit if graphify was not used.>
 
 ## Data, Config, And Integrations
 

@@ -9,6 +9,7 @@
 #
 # Env:
 #   CODEX_HOME   target Codex home (default: $HOME/.codex)
+#   SKIP_GRAPHIFY_INSTALL  set to 1 to skip graphify dependency setup
 set -euo pipefail
 
 # ---------- locate this script (works through symlinks) ----------
@@ -40,6 +41,7 @@ Usage:
 
 Env:
   CODEX_HOME   target Codex home (default: $HOME/.codex)
+  SKIP_GRAPHIFY_INSTALL  set to 1 to skip graphify dependency setup
 EOF
 }
 while [ $# -gt 0 ]; do
@@ -82,6 +84,57 @@ resolve_link() {
   else
     (cd -P "$(dirname "$link")" 2>/dev/null && cd -P "$raw" 2>/dev/null && pwd) || true
   fi
+}
+
+ensure_graphify() {
+  [ "${SKIP_GRAPHIFY_INSTALL:-0}" = 1 ] && { note "graphify dependency check skipped"; return 0; }
+
+  info "checking graphify"
+  if command -v graphify >/dev/null 2>&1; then
+    ok "graphify found: $(command -v graphify)"
+    return 0
+  fi
+
+  local has_python_import=0
+  if command -v python3 >/dev/null 2>&1 && python3 -c "import graphify" >/dev/null 2>&1; then
+    has_python_import=1
+  fi
+
+  if [ "$has_python_import" = 1 ]; then
+    warn "graphify Python package is installed, but the graphify CLI is not on PATH; installing graphifyy tool"
+  else
+    warn "graphify not found; installing graphifyy"
+  fi
+
+  if command -v uv >/dev/null 2>&1; then
+    run uv tool install --upgrade graphifyy
+  elif command -v python3 >/dev/null 2>&1; then
+    if [ "$DRY_RUN" = 1 ]; then
+      run python3 -m pip install graphifyy
+    elif ! python3 -m pip install graphifyy; then
+      python3 -m pip install graphifyy --break-system-packages
+    fi
+  else
+    err "graphify requires uv or python3 to install graphifyy"
+    exit 1
+  fi
+
+  if [ "$DRY_RUN" = 1 ]; then
+    return 0
+  fi
+
+  if command -v graphify >/dev/null 2>&1; then
+    ok "graphify installed: $(command -v graphify)"
+    return 0
+  fi
+
+  if command -v uv >/dev/null 2>&1 && uv tool run graphifyy python -c "import graphify" >/dev/null 2>&1; then
+    warn "graphify package installed, but graphify CLI is still not on PATH; add uv's tool bin directory to PATH"
+    return 0
+  fi
+
+  err "graphify installation could not be verified"
+  exit 1
 }
 
 # ---------- preflight ----------
@@ -171,6 +224,6 @@ do_uninstall() {
 }
 
 case "$ACTION" in
-  install)   do_install ;;
+  install)   ensure_graphify; printf "\n"; do_install ;;
   uninstall) do_uninstall ;;
 esac
