@@ -9,7 +9,6 @@
 #
 # Env:
 #   CODEX_HOME   target Codex home (default: $HOME/.codex)
-#   SKIP_GRAPHIFY_INSTALL  set to 1 to skip graphify dependency setup
 set -euo pipefail
 
 # ---------- locate this script (works through symlinks) ----------
@@ -41,7 +40,6 @@ Usage:
 
 Env:
   CODEX_HOME   target Codex home (default: $HOME/.codex)
-  SKIP_GRAPHIFY_INSTALL  set to 1 to skip graphify dependency setup
 EOF
 }
 while [ $# -gt 0 ]; do
@@ -87,8 +85,6 @@ resolve_link() {
 }
 
 ensure_graphify() {
-  [ "${SKIP_GRAPHIFY_INSTALL:-0}" = 1 ] && { note "graphify dependency check skipped"; return 0; }
-
   info "checking graphify"
   if command -v graphify >/dev/null 2>&1; then
     ok "graphify found: $(command -v graphify)"
