@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Estimation Standard"
+  short_description: "Estimate delivery effort with a shared rubric"
+  default_prompt: "Use $delivery-estimation-standard to independently estimate this frozen delivery scope."

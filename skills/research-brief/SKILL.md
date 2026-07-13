@@ -13,6 +13,7 @@ Use this skill when the user has an early idea but lacks enough technical, produ
 - Expand the user's thinking. Add relevant technologies, industry patterns, alternatives, risks, constraints, and failure modes the user may not have named.
 - Separate evidence from inference. Clearly distinguish confirmed facts, common practices, plausible inferences, and open questions.
 - Prefer decision-useful synthesis over source dumping. Convert research into options, tradeoffs, evaluation criteria, and next experiments.
+- Prefer mature internal components, managed services, official libraries, and maintained open-source options before proposing custom development. Require an explicit self-development requirement; if mature options have material fit gaps, raise a decision instead of silently recommending a new custom component.
 - Keep the depth proportional. Use a light pass for simple questions and a deeper pass for cross-domain, high-cost, or high-risk decisions.
 
 ## Verification Rules
@@ -70,11 +71,14 @@ Use the relevant parts of this checklist:
 
 ## Handoff Rules
 
+- If the question becomes a formal, multi-source requirement investigation with business flows, system boundaries, evidence traceability, or estimation inputs, hand off to `requirement-deep-research`.
 - If the idea is ready to become product requirements, hand off to `write-prd`.
 - If the user only needs technical options or architecture inputs, hand off to `write-trd`.
 - If the research exposes a concrete change with unclear blast radius, hand off to `change-impact-analysis`.
 
 ## Optional Subagent Strategy
+
+If an external squad, managed-agent platform, issue workflow, or lead has already assigned the research scope, execute that scope directly. Do not recursively create subagents or redistribute work unless the assignment explicitly grants orchestration responsibility.
 
 Use subagents only when the research scope is broad enough to benefit from parallel independent passes. Keep prompts minimal and avoid giving subagents your expected answer.
 

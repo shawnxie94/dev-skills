@@ -1,0 +1,4 @@
+interface:
+  display_name: "Requirement Deep Research"
+  short_description: "Build evidence-backed requirement research packets"
+  default_prompt: "Use $requirement-deep-research to deeply research this requirement and produce an evidence-backed packet."

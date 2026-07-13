@@ -1,11 +1,11 @@
 ---
 name: prepare-remote
-description: Prepare approved implementation plans, DAG nodes, or settled task scopes for remote Codex execution by creating bounded handoff task packets. Use when the user wants to delegate work to another machine, remote Codex instance, GitHub Issue, task file, or parallel implementation worker after PRD/TRD/execution planning is complete. Focus on source artifact links, scope, exclusions, dependencies, write ownership, verification commands, acceptance criteria, blocking conditions, and feedback format without implementing code.
+description: Prepare approved implementation plans, DAG nodes, or settled task scopes for delegated execution by creating bounded handoff task packets. Use when the user wants to delegate work to another machine, remote Codex instance, managed-agent issue, squad child issue, GitHub Issue, task file, or parallel implementation worker after PRD/TRD/execution planning is complete. Focus on source artifact links, scope, exclusions, dependencies, required skills, write ownership, verification commands, acceptance criteria, blocking conditions, and feedback format without implementing code.
 ---
 
 # Prepare Remote
 
-Use this skill to convert an approved execution plan or settled implementation node into one or more remote execution task packets. The output should be narrow enough that a remote Codex can execute it without redoing product discovery or expanding scope.
+Use this skill to convert an approved execution plan or settled implementation node into one or more delegated execution task packets. The target may be a remote Codex, managed-agent issue, squad child issue, GitHub Issue, or workspace task file. The output should be narrow enough that the assigned actor can execute it without redoing product discovery or expanding scope.
 
 ## Core Principles
 
@@ -13,6 +13,7 @@ Use this skill to convert an approved execution plan or settled implementation n
 - Preserve traceability to PRD, TRD, execution plan, issues, decisions, and code context.
 - Reuse the `write-execution-plan` DAG as the source of truth; do not create a second independent DAG.
 - Keep every remote task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
+- Preserve required capabilities and required skills from the source execution-plan node when the target platform supports them.
 - Split parallel tasks only when dependencies and write boundaries are clear.
 - Put only currently executable tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
 - Model multiple tasks from the same requirement as one feature task group with a DAG, not as unrelated ready tasks.
@@ -28,6 +29,7 @@ Extract:
 - Source artifacts and their file paths.
 - Approved scope and explicit non-goals.
 - Execution plan DAG nodes, dependencies, critical path, risk-first nodes, shared-write nodes, and remote handoff inputs.
+- Required capabilities and required skills for each execution-plan node.
 - Modules, files, APIs, schemas, migrations, generated artifacts, and config that each task may touch.
 - Verification commands, manual checks, fixtures, logs, or PR review gates.
 - Target repo, target branch, branch naming, PR expectations, and feedback format.
@@ -77,7 +79,7 @@ When document artifact mode is enabled:
 - Use `tasks/ready/` only when the task is explicitly approved for remote execution, or `document_artifacts.paths.task_ready` when configured.
 - Use `tasks/blocked/` for approved but dependency-blocked tasks when `document_artifacts.paths.task_blocked` is configured or the default directory exists; otherwise keep them in draft with `status: blocked`.
 - Use stable, descriptive filenames such as `tasks/draft/<feature-slug>-backend.md`.
-- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `plan_unit_id`, `feature`, `phase`, `depends_on`, `unblocks`, `parallel_group`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
+- Include frontmatter with at least `id`, `type: remote_task`, `status`, `created_at`, `updated_at`, `sources`, `related`, `plan_unit_id`, `feature`, `phase`, `depends_on`, `unblocks`, `parallel_group`, `required_capabilities`, `required_skills`, `write_ownership`, `forbidden_writes`, `mutex`, `branch`, and `worktree`.
 - Keep the final chat response to created or updated file paths, statuses, and concise summary.
 - If a required file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
 
@@ -157,6 +159,10 @@ phase: <contract|backend|frontend|integration|cleanup>
 depends_on: []
 unblocks: []
 parallel_group: <group-id>
+required_capabilities:
+  - <capability required by the source plan node>
+required_skills:
+  - <skill name required by the source plan node>
 mutex: []
 branch: task/<remote-task-id>
 worktree: .worktrees/<remote-task-id>
@@ -183,6 +189,11 @@ forbidden_writes:
 ## Required Context
 
 - <Files, docs, issues, or commands to inspect first>
+
+## Required Capabilities And Skills
+
+- Capabilities: <tool access, domain knowledge, or execution ability>
+- Skills: <skill names or "None">
 
 ## Dependencies And Parallelism
 

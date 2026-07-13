@@ -19,9 +19,21 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
 
+## Managed Task Boundary
+
+When a managed-agent platform, squad child issue, concrete GitHub Issue, task packet, or implementation DAG node is already assigned, treat it as the current-node context:
+
+- Execute only that assigned node and its explicit verification contract.
+- Do not scan for, claim, promote, or execute sibling ready tasks.
+- Do not recursively delegate work unless the assignment explicitly grants orchestration responsibility.
+- Respect the platform's scope, dependencies, required skills, write ownership, forbidden writes, status, and feedback format.
+- Report newly discovered dependencies or scope gaps to the external orchestrator instead of expanding the node unilaterally.
+
+Use Remote Task Bootstrap only when no explicit assigned plan, issue, task packet, or current-node context exists.
+
 ## Remote Task Bootstrap
 
-When this skill is invoked in a repository without an explicit plan, task path, issue, or current-node context:
+When this skill is invoked in a repository without an explicit plan, assigned managed-platform issue, task path, or current-node context:
 
 1. Check the current working directory for `.dev-skills/config.toml`.
    - If `document_artifacts.paths.task_ready` is configured, use that as the ready-task directory.
@@ -48,6 +60,7 @@ When this skill is invoked in a repository without an explicit plan, task path, 
 6. Before editing code, validate each selected task packet.
    - Require status to be `ready` or clearly approved for execution.
    - Read all `Required Context`, `sources`, and `related` artifacts that exist.
+   - Confirm the assigned actor has the task's `required_capabilities` and `required_skills`; otherwise report the mismatch instead of silently omitting the required workflow.
    - Respect `depends_on`; if an unmet dependency is obvious, stop and report the blocker.
    - Treat `write_ownership` as the allowed edit scope and `forbidden_writes` as hard exclusions unless the user explicitly overrides them.
    - Use the task packet's branch/worktree fields when present.

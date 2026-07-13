@@ -1,0 +1,4 @@
+interface:
+  display_name: "Synthesize Delivery Estimates"
+  short_description: "Compare independent estimates and resolve divergence"
+  default_prompt: "Use $synthesize-delivery-estimates to compare these independent delivery estimates."

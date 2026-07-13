@@ -1,6 +1,6 @@
 ---
 name: write-trd
-description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and write-execution-plan inputs without decomposing into detailed tasks or writing code.
+description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on mature-component reuse before custom development, architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and write-execution-plan inputs without decomposing into detailed tasks or writing code.
 ---
 
 # Write TRD
@@ -12,6 +12,7 @@ Use this skill after the PRD or product requirements are clear enough to design 
 - Start from requirements. Do not invent product scope beyond the PRD unless you mark it as an assumption or open question.
 - Design boundaries before internals. Clarify modules, ownership, interfaces, data, and responsibilities before implementation details.
 - Make tradeoffs explicit. Record important alternatives and why the selected approach fits the constraints.
+- Reuse before building. Prefer existing internal capabilities, managed services, official SDKs/libraries, and mature maintained open-source components. Select custom development only for an explicit self-development requirement; when mature options fail, raise an approval decision instead of defaulting to a new component.
 - Preserve compatibility. Call out existing API, data, config, migration, rollout, and rollback constraints.
 - Design for operation. Include failure handling, observability, security, and testability, not only the happy path.
 - Stop before task planning. Leave step-by-step implementation sequencing to `write-execution-plan`.
@@ -26,6 +27,7 @@ Extract:
 - User flows and system workflows.
 - Functional and non-functional requirements.
 - Existing architecture, modules, interfaces, data models, and dependencies.
+- Existing internal components and mature external services, SDKs, libraries, or open-source options that could satisfy the requirement.
 - Security, privacy, compliance, reliability, performance, and observability constraints.
 - Migration, rollout, compatibility, and rollback constraints.
 
@@ -62,21 +64,27 @@ When document artifact mode is enabled:
    - Identify affected components, data stores, external services, users, and integration points.
    - Note existing constraints from the codebase or platform.
 
-3. Define the proposed design.
+3. Assess component reuse.
+   - Inventory relevant internal capabilities, managed services, official SDKs/libraries, and mature open-source components.
+   - Evaluate functional fit, maturity, maintenance, security, compliance, licensing, integration, operations, performance, cost, and lock-in.
+   - Select `reuse`, `extend`, `custom`, or `not_applicable` for component-relevant areas.
+   - Select `custom` only for an explicit self-development requirement. If mature options fail material criteria, keep it as an open decision until the decision owner approves and records a custom-build requirement.
+
+4. Define the proposed design.
    - Specify module boundaries and responsibilities.
    - Define key interfaces, APIs, events, data models, or configuration contracts.
    - Describe state flow and important lifecycle transitions.
 
-4. Address quality attributes.
+5. Address quality attributes.
    - Cover relevant security, privacy, performance, reliability, scalability, compatibility, accessibility, and observability concerns.
 
-5. Plan compatibility and migration.
+6. Plan compatibility and migration.
    - Call out deploy order, data migration, feature flags, backfill, fallback, and rollback needs when relevant.
 
-6. Define verification strategy.
+7. Define verification strategy.
    - List unit, integration, e2e, migration, performance, security, or observability checks required by the design.
 
-7. Prepare `write-execution-plan` inputs.
+8. Prepare `write-execution-plan` inputs.
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
    - In document artifact mode, write these sections to the TRD file before the final response.
 
@@ -93,6 +101,7 @@ If affected modules, contracts, data flow, or compatibility risks are unclear, r
 Use the relevant parts of this checklist:
 
 - Architecture: components, ownership, boundaries, dependency direction.
+- Reuse: mature candidates, fit criteria, selected strategy, version/tier, lifecycle ownership, and custom-build justification.
 - Interfaces: API routes, request/response shapes, events, SDKs, CLI/config contracts.
 - Data: schemas, storage, indexes, migration, retention, privacy, lineage.
 - State: lifecycle, transitions, idempotency, retries, concurrency, transactions.
@@ -119,6 +128,10 @@ Answer in the user's language unless they request otherwise. Use this structure 
 <Affected components, external dependencies, data stores, and current constraints>
 
 ## Proposed Design
+
+### Mature Component Reuse Assessment
+
+<Internal, managed, official, and mature open-source candidates; fit criteria; reuse/extend/custom decision; explicit justification for custom development>
 
 ### Components and Responsibilities
 
