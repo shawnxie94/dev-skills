@@ -1,6 +1,6 @@
 ---
 name: skill-retrospective
-description: Improve existing skills based on real task feedback. Use when the user asks to review how a skill performed, update a skill from usage feedback, refine skill triggers, adjust handoff rules, fix an over-heavy or under-specified workflow, incorporate lessons from a real task, or evolve this repository's skills after using them. Focus on identifying concrete skill gaps, making minimal targeted edits, preserving lightweight scope, validating changed skills, and preparing the change for commit.
+description: Improve existing skills based on real task feedback. Use when the user asks to review how a skill performed, update a skill from usage feedback, refine skill triggers, adjust handoff rules, fix an over-heavy or under-specified workflow, incorporate lessons from a real task, evolve this repository's skills after using them, or uses Chinese requests such as 技能复盘, 优化技能, 改进 skill, 更新 skill. Focus on identifying concrete skill gaps, making minimal targeted edits, preserving lightweight scope, validating changed skills, and preparing the change for commit.
 ---
 
 # Skill Retrospective
@@ -14,7 +14,7 @@ Use this skill after a real task exposes a problem or improvement opportunity in
 - Separate skill problems from ordinary task difficulty.
 - Prefer trigger, workflow, handoff, output, or validation fixes over broad rewrites.
 - Keep skills lightweight and focused on one reusable workflow.
-- Validate every changed skill with `quick_validate.py`.
+- Validate every changed skill with the skill-creator `quick_validate.py` (absolute path below).
 
 ## What To Inspect
 
@@ -53,13 +53,22 @@ Classify the feedback:
    - Preserve existing naming and style conventions.
 
 5. Validate.
-   - Run `quick_validate.py` on every changed skill.
+   - Run the skill-creator validator on every changed skill:
+     `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py <skill-dir>`
+   - Prefer the absolute path above. If `$CODEX_HOME` differs, use `$CODEX_HOME/skills/.system/skill-creator/scripts/quick_validate.py`.
+   - This repository does not vendor `quick_validate.py`; do not invent a local path.
    - Search for stale skill names or old handoff references after renames.
    - Report validation results and remaining risk.
 
 6. Prepare follow-up.
    - If the user asked to commit, hand off to `prepare-commit`.
    - Otherwise summarize changed files and recommend commit scope.
+
+## Handoff Rules
+
+- After a successful skill edit and validation, hand off to `prepare-commit` when the user wants the change committed.
+- If there is no real task feedback, stop; do not speculate a redesign or invent gaps.
+- If the feedback is really about task difficulty rather than skill quality, report that and avoid skill edits.
 
 ## Output Format
 
@@ -84,7 +93,7 @@ Answer in the user's language unless they request otherwise. Use this structure 
 
 ## Validation
 
-- `<quick_validate.py ...>`: <result>
+- `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py <skill-dir>`: <result>
 
 ## Remaining Risk
 

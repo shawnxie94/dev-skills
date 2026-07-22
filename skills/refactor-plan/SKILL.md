@@ -1,6 +1,6 @@
 ---
 name: refactor-plan
-description: Plan and guide safe code refactors before implementation. Use when the user asks to refactor, reorganize, simplify, decouple, extract modules, reduce duplication, improve maintainability, migrate implementation structure, or clean up technical debt. Emphasize behavior preservation, scope control, risk assessment, characterization tests, incremental execution, verification, and rollback points.
+description: Plan and guide safe code refactors before implementation. Use when the user asks to refactor, reorganize, simplify, decouple, extract modules, reduce duplication, improve maintainability, migrate implementation structure, clean up technical debt, or uses Chinese requests such as 重构, 重构计划, 解耦, 拆模块, 清理技术债. Emphasize behavior preservation, scope control, risk assessment, characterization tests, incremental execution, verification, and rollback points.
 ---
 
 # Refactor Plan
@@ -64,6 +64,8 @@ Before editing, produce a compact plan when the refactor is non-trivial:
    - branch by abstraction for risky implementation replacement,
    - or Mikado-style prerequisite steps when dependencies block the target refactor.
 8. Define completion criteria and leftover cleanup items.
+
+## Output Format
 
 Use this format for the plan:
 

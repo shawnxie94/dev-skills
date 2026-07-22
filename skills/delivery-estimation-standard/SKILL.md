@@ -1,6 +1,6 @@
 ---
 name: delivery-estimation-standard
-description: Independently estimate a frozen delivery scope in person-months using a shared work-item rubric, optimistic/most-likely/pessimistic values, PERT expected effort, mature-component reuse assumptions, role totals, schedule assumptions, uncertainty, and machine-validatable JSON. Use when one or more Estimation Reviewers must assess the same Requirement Research Packet or settled scope, especially across different models for cross-validation. Enforce identical inputs and rules, first-pass independence, stable work item IDs, explicit assumptions, reuse-before-custom-build decisions, and reproducible output; do not synthesize other reviewers' estimates.
+description: Independently estimate a frozen delivery scope in person-months using a shared work-item rubric, optimistic/most-likely/pessimistic values, PERT expected effort, mature-component reuse assumptions, role totals, schedule assumptions, uncertainty, and machine-validatable JSON. Use when one or more Estimation Reviewers must assess the same Requirement Research Packet or settled scope, especially across different models for cross-validation, or when the user asks in Chinese for 独立估时, 人月估算, 交付估时, 交叉估时. Enforce identical inputs and rules, first-pass independence, stable work item IDs, explicit assumptions, reuse-before-custom-build decisions, and reproducible output; do not synthesize other reviewers' estimates.
 ---
 
 # Delivery Estimation Standard
@@ -120,6 +120,22 @@ python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <e
 ```
 
 Resolve the script path relative to this Skill directory. Resolve all validation errors before handing the estimate to the Research Lead.
+
+## Output Format
+
+Emit machine-validatable estimate JSON that conforms to [estimation-output-schema.md](references/estimation-output-schema.md).
+
+Required shape at minimum:
+
+- Top-level metadata: packet identity, reviewer id/model, rubric version, unit, assumptions.
+- Per work item: stable ID, O/M/P effort, expected effort, reuse strategy, roles, notes.
+- Aggregate totals: expected effort, role totals, calendar duration p50/p80, critical-path IDs.
+
+Validate before handoff:
+
+```bash
+python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <estimate.json>
+```
 
 ## Document Artifact Mode
 

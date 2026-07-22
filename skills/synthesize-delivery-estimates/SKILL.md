@@ -1,6 +1,6 @@
 ---
 name: synthesize-delivery-estimates
-description: Compare three or more sealed person-month delivery estimates produced independently from the same frozen requirement packet and shared rubric. Use when a Research Lead must validate unit and mature-component strategy consistency, calculate per-work-item medians and ranges, detect material divergence, identify likely assumption or scope causes, and produce a consensus review report. Do not create a fourth estimate or silently average incompatible inputs.
+description: Compare three or more sealed person-month delivery estimates produced independently from the same frozen requirement packet and shared rubric. Use when a Research Lead must validate unit and mature-component strategy consistency, calculate per-work-item medians and ranges, detect material divergence, identify likely assumption or scope causes, produce a consensus review report, or uses Chinese requests such as 综合估时, 估时评审, 估时汇总, 离散度分析. Do not create a fourth estimate or silently average incompatible inputs.
 ---
 
 # Synthesize Delivery Estimates
@@ -97,6 +97,22 @@ Use [consensus-report-template.md](references/consensus-report-template.md). The
 - Confidence and a recommended planning range or follow-up action.
 
 A planning range is a Lead decision based on the reviewed evidence. Label it as a synthesis decision, not a fourth reviewer estimate.
+
+## Output Format
+
+Produce:
+
+1. Machine comparison data for the independent estimates.
+2. A Research Lead consensus report using [consensus-report-template.md](references/consensus-report-template.md).
+
+The report must include:
+
+- Comparability checks and reviewer/model matrix.
+- Work-item medians, ranges, divergence, and flagged items.
+- Aggregate effort and duration comparison.
+- Root cause and resolution path for each material disagreement.
+- Scope gaps and assumptions requiring owner decisions.
+- Confidence plus a recommended planning range or follow-up action, labeled as a synthesis decision rather than a fourth estimate.
 
 ## Document Artifact Mode
 

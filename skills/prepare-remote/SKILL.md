@@ -1,6 +1,6 @@
 ---
 name: prepare-remote
-description: Prepare approved implementation plans, DAG nodes, or settled task scopes for delegated execution by creating bounded handoff task packets. Use when the user wants to delegate work to another machine, remote Codex instance, managed-agent issue, squad child issue, GitHub Issue, task file, or parallel implementation worker after PRD/TRD/execution planning is complete. Focus on source artifact links, scope, exclusions, dependencies, required skills, write ownership, verification commands, acceptance criteria, blocking conditions, and feedback format without implementing code.
+description: Prepare approved implementation plans, DAG nodes, or settled task scopes for delegated execution by creating bounded handoff task packets. Use when the user wants to delegate work to another machine, remote Codex instance, managed-agent issue, squad child issue, GitHub Issue, task file, or parallel implementation worker after PRD/TRD/execution planning is complete, or uses Chinese requests such as 远端交接, 远程任务, 委派任务, 任务包. Focus on source artifact links, scope, exclusions, dependencies, required skills, write ownership, verification commands, acceptance criteria, blocking conditions, and feedback format without implementing code.
 ---
 
 # Prepare Remote

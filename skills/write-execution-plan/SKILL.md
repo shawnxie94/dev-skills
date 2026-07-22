@@ -1,6 +1,6 @@
 ---
 name: write-execution-plan
-description: Write an actionable execution plan from a TRD, technical design, or settled implementation scope, including an implementation DAG and optional multi-agent execution plan. Use when the user asks to write an execution plan, implementation plan, task breakdown, development plan, module dependency analysis, DAG, rollout sequence, or agent concurrency plan. Focus on dependency ordering, critical path, risk-first sequencing, validation checkpoints, required capabilities and skills, single-writer boundaries, and bounded execution-actor contracts without writing code.
+description: Write an actionable execution plan from a TRD, technical design, or settled implementation scope, including an implementation DAG and optional multi-agent execution plan. Use when the user asks to write an execution plan, implementation plan, task breakdown, development plan, module dependency analysis, DAG, rollout sequence, agent concurrency plan, or uses Chinese requests such as 执行计划, 实施计划, 拆任务, 开发计划, 实施 DAG. Focus on dependency ordering, critical path, risk-first sequencing, validation checkpoints, required capabilities and skills, single-writer boundaries, and bounded execution-actor contracts without writing code.
 ---
 
 # Write Execution Plan

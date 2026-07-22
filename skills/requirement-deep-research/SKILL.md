@@ -1,6 +1,6 @@
 ---
 name: requirement-deep-research
-description: Conduct formal, multi-source requirement research and produce a decision-ready Requirement Research Packet before PRD, solution design, or delivery estimation. Use when a requirement spans business workflows, system boundaries, integrations, unfamiliar domains, technical options, compliance, or material delivery risk and a lightweight research brief is not enough. Focus on traceable evidence, mature-component reuse before custom development, source quality, counter-evidence, confidence, functional scope, process flows, system decomposition, technical options, risks, and a frozen estimation input without producing effort numbers.
+description: Conduct formal, multi-source requirement research and produce a decision-ready Requirement Research Packet before PRD, solution design, or delivery estimation. Use when a requirement spans business workflows, system boundaries, integrations, unfamiliar domains, technical options, compliance, or material delivery risk and a lightweight research brief is insufficient, or when the user asks in Chinese for 深度需求调研, 正式需求调研, 需求调研包, 估时输入. Focus on evidence-backed scope, functional points, process flows, system boundaries, technical options, risks, and a frozen estimation input without producing effort numbers.
 ---
 
 # Requirement Deep Research
@@ -119,6 +119,18 @@ Use the detailed fields in [evidence-matrix.md](references/evidence-matrix.md). 
 - `low`: weak, conflicting, stale, or largely inferred evidence; further validation is required.
 
 Confidence describes evidence strength, not how strongly the author prefers a conclusion.
+
+## Output Format
+
+Publish a Requirement Research Packet using [research-packet-template.md](references/research-packet-template.md), with evidence tracked via [evidence-matrix.md](references/evidence-matrix.md).
+
+The packet must make explicit:
+
+- Supported decision, scope, exclusions, and research cutoff.
+- Traceable evidence for material claims, with fact vs inference separation.
+- Functional points, process flows, system boundaries, integrations, and technical options.
+- Frozen estimation work items with stable IDs and no effort numbers.
+- Packet readiness, remaining gaps, and reuse/custom decisions where relevant.
 
 ## Document Artifact Mode
 

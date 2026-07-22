@@ -1,6 +1,6 @@
 ---
 name: change-impact-analysis
-description: Analyze the blast radius of a proposed change, current diff, refactor, API change, schema change, config change, dependency change, or bug fix before design, planning, implementation, or commit. Use when the user asks what a change affects, whether a change is safe, which modules or callers are impacted, what tests are needed, or when another skill finds unclear affected modules, contracts, data flow, compatibility, shared state, migrations, permissions, caching, or config. Focus on direct and indirect impact, contracts, data, config, tests, compatibility risks, scope boundaries, and next-step inputs.
+description: Analyze the blast radius of a proposed change, current diff, refactor, API change, schema change, config change, dependency change, or bug fix before design, planning, implementation, or commit. Use when the user asks what a change affects, whether a change is safe, which modules or callers are impacted, what tests are needed, when another skill finds unclear affected modules, contracts, data flow, compatibility, shared state, migrations, permissions, caching, or config, or uses Chinese requests such as 影响面, 改动范围, 影响分析, 会不会影响. Focus on direct and indirect impact, contracts, data, config, tests, compatibility risks, scope boundaries, and next-step inputs.
 ---
 
 # Change Impact Analysis

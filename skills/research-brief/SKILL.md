@@ -1,6 +1,6 @@
 ---
 name: research-brief
-description: Turn rough ideas into useful research inputs before requirements analysis or technical design. Use when the user asks to research an idea, explore industry practice, identify blind spots, compare technical directions, understand an unfamiliar domain, collect design inputs, or prepare for a product, engineering, agent, platform, or workflow decision. Emphasize problem reframing, evidence quality, current-source verification, alternatives, risks, decision criteria, and next-step experiments.
+description: Turn rough ideas into useful research inputs before requirements analysis or technical design. Use when the user asks to research an idea, explore industry practice, identify blind spots, compare technical directions, understand an unfamiliar domain, collect design inputs, prepare for a product, engineering, agent, platform, or workflow decision, or uses Chinese requests such as 调研, 研究一下, 摸底, 找盲点. Emphasize problem reframing, evidence quality, current-source verification, alternatives, risks, decision criteria, and next-step experiments.
 ---
 
 # Research Brief
