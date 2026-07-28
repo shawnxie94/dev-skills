@@ -123,6 +123,27 @@ If `.dev-skills/config.toml` enables `[document_artifacts]`, write machine compa
 
 Otherwise, return the concise report in chat and preserve comparison JSON when the user requests an artifact.
 
+## Publish Layering (Multica / issue threads)
+
+Keep comparison JSON / consensus report files as artifacts. The issue comment should be a short **Decision Card**, not a full work-item divergence dump.
+
+```markdown
+## Decision Card
+- status: synthesized | synthesis_blocked | requires_packet_revision
+- packet_id / packet_hash:
+- reviewer_count / synthesis_eligible:
+- planning range (total_expected min–max or median band):
+- schedule range (P50/P80 band) if comparable:
+- divergence nature: calibration skew | scope/assumption conflict | mixed
+- waiting_on: none | third_reviewer | focused_rereview | human_decision | packet_revision
+- choose: (explicit human options when blocked)
+- artifacts: <comparison/consensus filenames>
+```
+
+Put per-item median/min/max/divergence tables in the comparison artifact. Mention only the material divergence drivers in the Decision Card.
+
+If fewer than three sealed comparable estimates are available, say `synthesis_blocked` / not eligible, give a descriptive range only if useful, and do **not** invent consensus.
+
 ## Handoff Rules
 
 - If material scope gaps exist, hand back to `requirement-deep-research` or the Requirement & Solution Analyst.

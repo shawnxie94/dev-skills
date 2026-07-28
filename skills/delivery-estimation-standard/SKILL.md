@@ -137,11 +137,32 @@ Validate before handoff:
 python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <estimate.json>
 ```
 
+## Publish Layering (Multica / issue threads)
+
+Keep the **estimate JSON as the artifact SoT**. The issue comment is only a short Decision Card (about ≤25 lines). Do not paste the full JSON or a full per-item O/M/P table into the comment.
+
+```markdown
+## Decision Card
+- reviewer / model-runtime:
+- independence: first_pass_sealed; no other reviewer/budget anchors
+- packet_id / packet_hash: (verified)
+- total_expected / duration_p50 / duration_p80 / confidence:
+- critical_path:
+- recommended_team: (one line)
+- scope_gaps / uncertainty: (≤3 most material)
+- artifacts: <estimate-*.json>
+- validate_estimate: pass | fail
+```
+
+Per-item optimistic/most-likely/pessimistic values, assumption lists, and role arithmetic belong in the JSON file.
+
 ## Document Artifact Mode
 
 If `.dev-skills/config.toml` enables `[document_artifacts]`, write the estimate to `docs/estimates/` or `document_artifacts.paths.delivery_estimates` when configured. Use a stable name such as `docs/estimates/<packet-id>-<reviewer-id>.json`.
 
-Otherwise, return schema-conformant JSON in chat unless the user requests a file.
+On Multica / managed-issue runs, attach the estimate JSON as the SoT artifact and keep the thread comment to the Decision Card.
+
+Otherwise, return schema-conformant JSON in chat unless the user requests a file. Prefer an attachment when the JSON is long.
 
 ## Handoff Rules
 

@@ -105,4 +105,8 @@ Do not include effort, duration, points, or target dates in this table.
 - Evidence limitations:
 ```
 
+## Readability note for publishers
+
+When publishing to an issue thread (e.g. Multica), attach this full packet as the SoT file and put only a short Decision Card in the comment. Inside the file, keep estimator-critical sections easy to scan first; long evidence extracts and deep notes may follow as appendix-style detail without removing required sections.
+
 When the packet is frozen for estimation, compute the SHA-256 of the exact file or input bundle outside this self-referential content and give the same `packet_hash` to every reviewer.

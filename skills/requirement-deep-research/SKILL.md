@@ -110,6 +110,26 @@ Use [research-packet-template.md](references/research-packet-template.md). Befor
 - Send every reviewer the same packet bytes, rubric version, instructions, and output schema.
 - If the packet changes, create a new hash and rerun all reviewers; do not mix versions.
 
+#### Publish layering (Multica / issue threads)
+
+Keep the **full packet as the artifact SoT**. Do not paste the full packet, full work-item table, or full evidence matrix into the issue comment.
+
+Issue / chat comment should be a short **Decision Card** (about ≤40 lines):
+
+```markdown
+## Decision Card
+- status: ready_for_estimation | not_ready_for_estimation
+- packet_id / version / research_cutoff:
+- packet_hash: sha256:…
+- key findings: (≤5 factual bullets)
+- open decisions: (mark blockers)
+- estimation freeze: rubric 2.0 / person_months / working_days_per_person_month
+- work items: W…–W…
+- artifacts: <packet filename>
+```
+
+Inside the packet file, prefer a scannable main path for estimators (Scope, Executive Findings, Frozen Work Items, Open Decisions, Readiness, Freeze Header) and push long evidence extracts, long flows, and deep component notes to appendix-style sections when needed. Do **not** drop required gate fields to look short.
+
 ## Evidence Confidence
 
 Use the detailed fields in [evidence-matrix.md](references/evidence-matrix.md). As a shorthand:
@@ -136,7 +156,9 @@ The packet must make explicit:
 
 If `.dev-skills/config.toml` enables `[document_artifacts]`, write the packet to `docs/research/` or `document_artifacts.paths.research` when configured. Use a stable filename such as `docs/research/<requirement-slug>-research.md` and include frontmatter with `id`, `type: requirement_research`, `status`, `version`, `created_at`, `updated_at`, `sources`, and `related`.
 
-Otherwise, return the packet in chat unless the user requests a file.
+On Multica / managed-issue runs, attach the packet file as the SoT artifact and keep the thread comment to the Decision Card above.
+
+Otherwise, return the packet in chat unless the user requests a file. Prefer a file attachment whenever the packet is long enough to hurt scanability.
 
 ## Handoff Rules
 
