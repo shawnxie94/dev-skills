@@ -18,7 +18,7 @@ Use this skill after a real task exposes a problem or improvement opportunity in
 
 ## What To Inspect
 
-Use the user's feedback, recent conversation, changed files, skill bodies, README, validation output, and task artifacts when available.
+Use the user's feedback, recent conversation, changed files, skill bodies, README, validation output, task artifacts, and a local run summary when available. Run summaries are evidence about frequency and outcomes, not a substitute for reading the concrete task feedback.
 
 Classify the feedback:
 
@@ -36,6 +36,9 @@ Classify the feedback:
    - State what happened in the task.
    - Identify which skill was used or should have been used.
    - Separate confirmed skill gaps from preferences or one-off task noise.
+   - If a run log exists, summarize it before drawing conclusions:
+     `python3 <dev-skills>/scripts/summarize_skill_runs.py --path <run-log> --since-days 30`
+   - Treat counts as signals only; confirm the underlying task examples before editing a skill.
 
 2. Locate the affected skill content.
    - Inspect frontmatter `description` for trigger issues.
@@ -60,7 +63,12 @@ Classify the feedback:
    - Search for stale skill names or old handoff references after renames.
    - Report validation results and remaining risk.
 
-6. Prepare follow-up.
+6. Record the outcome when the change is based on a meaningful run.
+   - Append a short, non-sensitive event with `scripts/record_skill_run.py`.
+   - Record `blocked` or `abandoned` outcomes as well as successful runs; these are the most useful signals for future retrospectives.
+   - Do not record the original prompt, source code, secrets, or sensitive business data.
+
+7. Prepare follow-up.
    - If the user asked to commit, hand off to `prepare-commit`.
    - Otherwise summarize changed files and recommend commit scope.
 

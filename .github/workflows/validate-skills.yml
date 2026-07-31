@@ -1,0 +1,22 @@
+name: Validate skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check skill contracts
+        run: python3 scripts/check_skill_contracts.py
+      - name: Compile repository scripts
+        run: python3 -m compileall -q scripts

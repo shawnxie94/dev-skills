@@ -63,6 +63,35 @@ task_done = "tasks/done"
 decision = "decisions"
 ```
 
+## 运行反馈与仓库校验
+
+仓库不自动收集原始 prompt 或业务内容。为了让 skill 复盘有实际证据，可以在重要任务结束后记录一条本地运行事件：
+
+```bash
+python3 scripts/record_skill_run.py \
+  --skill codebase-orientation \
+  --status completed \
+  --validation pass \
+  --task-type orientation \
+  --next-handoff write-trd
+```
+
+默认记录到 `~/.codex/dev-skills-runs.jsonl`，也可以通过 `DEV_SKILLS_RUN_LOG` 或 `--path` 改为其他本地文件。记录只包含结果元数据、简短 friction tag 和可选短反馈，不应写入原始 prompt、源码、密钥或业务数据。使用以下命令生成近期开工情况摘要：
+
+```bash
+python3 scripts/summarize_skill_runs.py \
+  --path ~/.codex/dev-skills-runs.jsonl \
+  --since-days 30
+```
+
+提交前或 CI 中运行仓库级契约检查：
+
+```bash
+python3 scripts/check_skill_contracts.py
+```
+
+该检查会校验 skill 元数据、Agent 配置、内部引用和 README 覆盖情况；各 skill 的结构校验仍由 `quick_validate.py` 负责。
+
 文档资产模式下的文件应尽量使用稳定文件名，并包含可追踪元数据，例如：
 
 ```yaml
