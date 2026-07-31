@@ -15,6 +15,7 @@ Use this skill after the TRD or technical direction is clear enough to plan impl
 - Keep write ownership clear. Prefer a single writer for shared files, public interfaces, schemas, migrations, and cross-cutting contracts.
 - Assign execution actors only when parallelism reduces time or improves analysis quality without creating merge conflicts or context confusion.
 - Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal.
+- Give every task stable contract linkage: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id` when an outer Task Pack exists, `source_artifacts`, `source_hash`, `acceptance_ids`, and `evidence_required`.
 
 ## Inputs to Look For
 
@@ -27,6 +28,8 @@ Extract:
 - Sequencing constraints: deploy order, migration order, feature flags, compatibility needs.
 - Risk points: unknown APIs, data quality, concurrency, external services, performance, security, operational risk.
 - Validation options: tests, smoke checks, manual flows, logs, metrics, local or staging verification.
+- Existing outer contracts: agent-brain Task Pack id, source artifacts/hash, allowed paths, required skills, and canonical acceptance ids.
+- Plan identity: stable plan id, plan hash, and base commit used for the planned change.
 
 ## Document Artifact Mode
 
@@ -78,9 +81,11 @@ When document artifact mode is enabled:
    - Choose among the local lead, local subagent, managed agent, remote worker, or unassigned actor.
    - Prefer delegated actors for independent read-only analysis, isolated modules, tests, documentation, or clearly bounded implementation.
    - Avoid concurrent writes to the same files, public contracts, database schemas, generated artifacts, or migration paths unless ownership is explicit.
+   - Before approving parallel nodes, normalize their pathspecs and reject overlapping write ownership or mutexes; record the result in the plan.
+   - Analyze direct and indirect impact before choosing isolation: read-only tasks may run in parallel without worktrees; disjoint writes may run serially in one checkout; simultaneous writes require isolated worktrees; shared contracts remain serial single-writer tasks.
 
 6. Create per-actor execution contracts when delegation is recommended.
-   - Each actor contract must define objective, scope, inputs, required capabilities, required skills, write ownership, forbidden writes, steps, verification, expected output, acceptance criteria, and handoff readiness.
+   - Each actor contract must define objective, scope, inputs, required capabilities, required skills, write ownership, forbidden writes, steps, verification, expected output, acceptance criteria, evidence required, and handoff readiness.
    - Keep execution prompts narrow and avoid leaking expected answers.
 
 7. Define verification and handoff.
@@ -130,11 +135,13 @@ Answer in the user's language unless they request otherwise. Use this structure 
 
 ### Node Contract: U1
 
+- Contract linkage: plan_id / source_plan_sha256 / base_commit / task_id / source_artifacts / source_hash / acceptance_ids
 - Required capabilities: <reasoning, repository access, browser, domain knowledge, or other needs>
 - Required skills: <skill names or "None">
 - Write ownership: <allowed paths, modules, contracts, or "Read only">
 - Forbidden writes: <explicit exclusions>
 - Verification: <command, check, or evidence>
+- Evidence required: <machine-readable path, overall status, exit codes, git_head, changed files, source hashes, or manual acknowledgement>
 - Handoff readiness: <observable conditions required before downstream actors can start>
 
 ## Implementation DAG
@@ -155,10 +162,12 @@ Shared-write nodes: <U1, U2>
 
 ## Actor Parallelization Plan
 
-Recommendation: <Delegate / Keep serial / Delegate analysis only>
+Recommendation: <Read-only parallel / Serial same worktree / Concurrent writes in worktrees / Serial shared writer>
 
 Reasoning:
-- <Why parallelism helps or hurts>
+  - <Why parallelism helps or hurts>
+- Impact decision: <read_only_parallel | serial_same_worktree | concurrent_write_worktree | serial_shared_writer>
+- Worktree required: <yes/no and why>
 
 ## Per-Actor Execution Contracts
 

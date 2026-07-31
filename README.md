@@ -149,6 +149,32 @@ related: {}
 
 `write-execution-plan` 产出的每个节点应使用平台无关的 Actor 契约，至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。这样同一计划可以交给本地 Agent、Multica managed Agent、Squad child issue 或远端 worker，而不需要重写任务边界。
 
+## 与 agent-brain 的任务契约衔接
+
+当执行任务通过 agent-brain 的外循环运行时，两个仓库各自负责一层：
+
+- `agent-brain` 的 Task Pack 是外部合同，负责目标、范围、`allowed_paths`、canonical acceptance、基线和最终 Done 门。
+- `dev-skills` 是内部研发能力，负责调研、设计、计划、交接、实现和提交前检查；Skill 不另造一套 acceptance 真相。
+- `write-execution-plan` 节点应携带 `plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
+- `prepare-remote` 要原样传递这些字段，并明确 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
+- 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。
+- 状态推进规则：`ready` 只表示依赖满足且可领取；`done` 只表示实现分支完成；只有 Acceptance Pack source hash 匹配且 evidence `overall=pass` 才能进入 `accepted`，下游任务据此 promotion。`skipped` 必须由用户拥有 residual risk，不能自动 promotion。
+- 多 Agent 并发前必须检查规范化后的 `write_ownership`、mutex、branch/worktree 和 base commit；共享 contract/schema/migration/generated artifact 默认单写者。
+
+多 Agent 的 worktree 策略不是“一任务一 worktree”：先做影响分析并标记并发模式。只读分析可共享工作区并行；可安全串行的独立写入可复用工作区；只有真正需要同时写入代码的任务才强制独立 branch/worktree。
+
+推荐衔接：
+
+```text
+TRD / settled scope
+  → write-execution-plan (DAG + contract linkage)
+  → prepare-remote (bounded packet + source hash)
+  → agent-brain Task Pack (canonical acceptance + baseline)
+  → implement-plan (node-scoped build/verify)
+  → acceptance.json + scope evidence
+  → prepare-commit
+```
+
 ## Installation
 
 仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到 `~/.codex/skills/`（可用 `CODEX_HOME` 覆盖目标 Codex 目录）。安装时会检测 `graphify` 是否可用，缺失时通过 `uv tool install --upgrade graphifyy` 或 `python3 -m pip install graphifyy` 安装。

@@ -16,6 +16,7 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Validate after each meaningful step, not only at the end.
 - Treat subagent output as candidate work that the main agent must review, merge, and verify.
 - Enforce remote task `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
+- When agent-brain is present, treat its Task Pack as the outer contract and the selected dev-skill as the inner execution capability.
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
 
@@ -52,10 +53,15 @@ When this skill is invoked in a repository without an explicit plan, assigned ma
    - Treat overlapping `write_ownership` entries as a conflict unless the plan explicitly assigns non-overlapping subpaths.
    - Treat matching `mutex` values as a conflict.
    - Treat public contracts, schemas, migrations, generated artifacts, dependency manifests, lockfiles, and shared config as serial unless single-writer ownership is explicit.
-5. Decide execution mode.
+5. Analyze impact and choose execution mode.
+   - Classify each task as read-only, serial-write, or concurrent-write before creating branches or worktrees.
+   - Trace direct and indirect impact: callers, shared contracts, generated artifacts, test fixtures, config, lockfiles, and runtime state; path disjointness alone is insufficient.
+   - Read-only analysis may run in parallel in the same checkout when no task writes files.
+   - Independent code tasks may reuse one checkout only when the orchestrator serializes their writes; never let two agents write the same checkout simultaneously.
+   - Require a dedicated branch and worktree only for genuinely simultaneous write tasks, or when the impact analysis cannot prove safe serialization.
    - If exactly one runnable task remains, execute it in the current worktree only if the worktree is clean and the branch matches the task or can be safely created.
-   - If multiple runnable tasks remain and subagents are available, use subagents only when each task can run in its own git worktree and branch.
-   - If separate worktrees or subagents are not available, execute only one task and report the remaining runnable tasks.
+   - If multiple runnable tasks remain and subagents are available, use read-only parallelism or isolated worktrees according to the impact result.
+   - If separate worktrees are unavailable, keep code writes serial; read-only analysis can still run in parallel.
    - If multiple runnable tasks conflict, execute them serially in dependency or merge order.
 6. Before editing code, validate each selected task packet.
    - Require status to be `ready` or clearly approved for execution.
@@ -66,21 +72,35 @@ When this skill is invoked in a repository without an explicit plan, assigned ma
    - Use the task packet's branch/worktree fields when present.
 7. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
 
-## Concurrent Execution
+### Agent-brain Contract Bridge
 
-Use concurrent execution only when all of these are true:
+When the current task has an agent-brain run directory or Task Pack:
 
-- Each runnable task has satisfied dependencies.
-- `write_ownership` does not overlap.
-- `mutex` values do not overlap.
-- Each task has a dedicated branch and git worktree.
-- Each subagent receives only its task packet, required context, exclusions, verification commands, and expected feedback format.
+1. Validate the Task Pack strictly before editing; require non-empty `allowed_paths` and at least one acceptance check.
+2. Confirm `required_skills` includes the skills needed by this node and that `plan_unit_id` / `task_id` match the assigned handoff.
+3. Treat Task Pack `acceptance` as canonical. The generated Acceptance Pack must carry the matching source hash.
+4. Run acceptance and scope checks through the brain scripts. Manual checks are `pending` until explicitly acknowledged.
+5. Report Done only when machine evidence says `overall: pass` (or the user explicitly owns a residual-risk skip); do not convert a host goal or prose summary into Done.
+6. Before starting parallel work, verify normalized write ownership, mutex, branch, worktree, and base commit; overlapping or unisolated writes are serial blockers, while read-only tasks do not require worktrees.
+
+## Parallelism And Worktree Decision
+
+Use this decision order:
+
+1. Satisfy dependencies and run impact analysis.
+2. If every selected actor is read-only, run them in parallel in the same checkout.
+3. If actors write files but execution can be serialized and write ownership is disjoint, reuse one checkout serially.
+4. If actors must write simultaneously, require non-overlapping ownership, non-overlapping mutexes, dedicated branches, and dedicated worktrees.
+5. If impact is unclear or shared state is involved, keep the work serial and assign one writer.
+
+For every mode, each actor receives only its task packet, required context, exclusions, verification commands, and expected feedback format.
 
 Recommended isolation pattern:
 
 ```text
 main worktree
-  -> planning/review only
+  -> read-only analysis in parallel
+  -> serial code writes when impact is low and ownership is disjoint
 
 .worktrees/<task-a>
   -> branch task/<task-a>
@@ -89,7 +109,7 @@ main worktree
   -> branch task/<task-b>
 ```
 
-Do not let two agents edit the same checkout. Merge results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
+Do not let two agents edit the same checkout simultaneously. Merge isolated results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
 
 ## Task Group Progression
 
