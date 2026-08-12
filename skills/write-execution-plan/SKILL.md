@@ -17,6 +17,34 @@ Use this skill after the TRD or technical direction is clear enough to plan impl
 - Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal.
 - Give every task stable contract linkage: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id` when an outer Task Pack exists, `source_artifacts`, `source_hash`, `acceptance_ids`, and `evidence_required`.
 
+## Implementation Handoff Gate
+
+When the plan will be implemented by `agent-brain` or `implement-plan`, the plan must be materialized as a canonical workspace artifact. Chat output alone is not a valid implementation handoff, even when document artifact mode is disabled.
+
+The canonical artifact is normally `docs/plans/<feature-slug>-execution-plan.md` (or the configured execution-plan path) and must include frontmatter with at least:
+
+```yaml
+id: <stable plan id>
+type: execution_plan
+status: draft | approved
+created_at: <date>
+updated_at: <date>
+sources: []
+related: []
+base_commit: <git commit used for planning>
+```
+
+`source_plan_sha256` is the SHA-256 of the complete canonical plan file and is recorded in downstream Task Packs; do not put the file's own hash into its frontmatter because that would create a circular hash. `plan_id`, `base_commit`, source artifacts, and plan-unit IDs must remain stable between planning and implementation.
+
+Before handing off, run and report:
+
+```bash
+git rev-parse HEAD
+shasum -a 256 docs/plans/<feature-slug>-execution-plan.md
+```
+
+An implementation handoff is incomplete until the plan is approved, the artifact path and hash are reported, and each runnable unit has a bounded Task Pack linkage. If the user asked for implementation immediately, approval may be the explicit approval in that same turn; otherwise stop after writing the plan.
+
 ## Inputs to Look For
 
 Use the TRD, PRD, research brief, existing codebase, issue context, test layout, deployment constraints, and user constraints when available.
@@ -42,13 +70,13 @@ Document artifact mode is enabled only when that file exists and contains:
 enabled = true
 ```
 
-When document artifact mode is disabled or the config is absent, keep the normal chat-output behavior.
+When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Gate above still requires a canonical plan artifact.
 
 When document artifact mode is enabled:
 
 - Create or update the execution plan as a managed workspace file instead of only writing it in chat.
-- Use `plans/` by default, or `document_artifacts.paths.execution_plan` when configured.
-- Use a stable, descriptive filename such as `plans/<feature-slug>-execution-plan.md`.
+- Use `docs/plans/` by default, or `document_artifacts.paths.execution_plan` when configured.
+- Use a stable, descriptive filename such as `docs/plans/<feature-slug>-execution-plan.md`.
 - Include frontmatter with at least `id`, `type: execution_plan`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
 - Link source PRD/TRD paths in `related` when they exist.
 - Include a `Remote Handoff Inputs` section that identifies which plan nodes can be delegated to a remote Codex and what context, exclusions, verification commands, and acceptance criteria the remote task needs.
@@ -91,12 +119,14 @@ When document artifact mode is enabled:
 7. Define verification and handoff.
    - Attach verification to each phase or DAG node.
    - State what the coordinating actor should inspect before accepting delegated output.
-   - In document artifact mode, write the plan and remote handoff inputs to the execution plan file before the final response.
+   - Write the plan and remote handoff inputs to the canonical execution plan file before the final response whenever the plan is implementation-bound.
+   - Compute the canonical file hash only after all edits are complete; downstream Task Packs copy it into `source_plan_sha256`.
 
 ## Handoff Rules
 
 - If the plan is approved for delegation to another machine, remote Codex, managed-agent issue, squad child issue, GitHub Issue, or task file, hand off to `prepare-remote`.
-- If the plan is accepted and implementation should begin, hand off to `implement-plan`.
+- If the plan is accepted and implementation should begin, hand off to `agent-brain` task mode, which creates the linked Task Pack, and then to `implement-plan`.
+- If the plan artifact, hash, approval, or Task Pack linkage is missing, stop and repair the planning handoff before implementation.
 - If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `change-impact-analysis`.
 - If the plan is for a refactor, ensure `refactor-plan` has defined behavior protection first.
 
@@ -126,6 +156,14 @@ Answer in the user's language unless they request otherwise. Use this structure 
 ## Implementation Goal
 
 <What will be implemented and what done means>
+
+## Plan Artifact
+
+- path: `<canonical execution plan path>`
+- plan_id: `<stable id>`
+- status: `draft|approved`
+- base_commit: `<git commit>`
+- source_plan_sha256: `<sha256 of the complete plan file>`
 
 ## Implementation Units
 

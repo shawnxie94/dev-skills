@@ -1,4 +1,4 @@
 interface:
   display_name: "Write Execution Plan"
   short_description: "Turn a TRD into an implementation DAG"
-  default_prompt: "Use $write-execution-plan to turn this TRD into an implementation DAG and subagent plan."
+  default_prompt: "Use $write-execution-plan to create a canonical, hashable execution-plan artifact from this TRD, with an implementation DAG, bounded node contracts, and handoff metadata for agent-brain and implement-plan."

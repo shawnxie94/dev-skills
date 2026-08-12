@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Plan"
   short_description: "Implement runnable tasks safely"
-  default_prompt: "Use $implement-plan to implement the provided plan, or resolve ready tasks in tasks/ready and execute only runnable non-conflicting work."
+  default_prompt: "Use $implement-plan only after verifying an approved canonical execution-plan artifact and its source_plan_sha256 linkage; then implement one runnable, bounded task at a time with node-level acceptance evidence."

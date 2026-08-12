@@ -21,6 +21,20 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
 
+## Mandatory Plan Preflight
+
+Before reading a ready task as runnable or editing any file, require an approved canonical execution plan for every implementation-bound task. The plan may be supplied directly by the user, by `write-execution-plan`, or by a remote task packet, but it must be a file on disk rather than chat-only prose.
+
+For an agent-brain Task Pack, verify all of these values before Build:
+
+1. `source_artifacts` contains the canonical execution-plan file (not only PRD/TRD files).
+2. The file exists and its current `shasum -a 256` equals `source_plan_sha256`.
+3. `plan_id`, `plan_unit_id`, and `base_commit` match the plan and the assigned unit.
+4. The plan status is `approved`, or the user explicitly approved it in the current turn.
+5. The Task Pack's `allowed_paths`, acceptance checks, and write ownership are a bounded subset of the plan unit.
+
+If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `write-execution-plan` or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
+
 ## Managed Task Boundary
 
 When a managed-agent platform, squad child issue, concrete GitHub Issue, task packet, or implementation DAG node is already assigned, treat it as the current-node context:
@@ -78,11 +92,12 @@ When this skill is invoked in a repository without an explicit plan, assigned ma
 When the current task has an agent-brain run directory or Task Pack:
 
 1. Validate the Task Pack strictly before editing; require non-empty `allowed_paths` and at least one acceptance check.
-2. Confirm `required_skills` includes the skills needed by this node and that `plan_unit_id` / `task_id` match the assigned handoff.
-3. Treat Task Pack `acceptance` as canonical. The generated Acceptance Pack must carry the matching source hash.
-4. Run acceptance and scope checks through the brain scripts. Manual checks are `pending` until explicitly acknowledged.
-5. Report Done only when machine evidence says `overall: pass` (or the user explicitly owns a residual-risk skip); do not convert a host goal or prose summary into Done.
-6. Before starting parallel work, verify normalized write ownership, mutex, branch, worktree, and base commit; overlapping or unisolated writes are serial blockers, while read-only tasks do not require worktrees.
+2. Run the Mandatory Plan Preflight. A Task Pack with `plan_unit_id` but missing or stale `plan_id` / `source_plan_sha256` / `base_commit` is blocked even if `validate-task-pack` returns OK.
+3. Confirm `required_skills` includes the skills needed by this node and that `plan_unit_id` / `task_id` match the assigned handoff.
+4. Treat Task Pack `acceptance` as canonical. The generated Acceptance Pack must carry the matching source hash.
+5. Run acceptance and scope checks through the brain scripts. Manual checks are `pending` until explicitly acknowledged.
+6. Report Done only when machine evidence says `overall: pass` (or the user explicitly owns a residual-risk skip); do not convert a host goal or prose summary into Done.
+7. Before starting parallel work, verify normalized write ownership, mutex, branch, worktree, and base commit; overlapping or unisolated writes are serial blockers, while read-only tasks do not require worktrees.
 
 ## Parallelism And Worktree Decision
 
@@ -153,7 +168,7 @@ If no test is practical, state the manual verification path and residual risk be
 1. Confirm inputs.
    - Identify the source plan, current node, scope, expected behavior, verification mode, and done criteria.
    - If no explicit input is provided, run the remote task bootstrap before asking for more context.
-   - If no plan exists, ask for or create a `write-execution-plan` first unless the work is trivial.
+   - If no approved canonical plan exists, stop and route to `write-execution-plan`; “trivial” applies only to a single-file, already-specified change with no Task Pack plan unit.
 
 2. Prepare verification.
    - Write or identify the focused test/check/manual validation for the node.
@@ -213,6 +228,7 @@ for future retrospectives.
 ## Handoff Rules
 
 - If the implementation plan becomes invalid, hand off to `write-execution-plan` to revise sequencing.
+- If the plan artifact or hash is missing/stale, hand off to `write-execution-plan` before any repair or code change.
 - If scope expands or affected contracts are unclear, hand off to `change-impact-analysis`.
 - If implementation completes, hand off to `prepare-commit`.
 
