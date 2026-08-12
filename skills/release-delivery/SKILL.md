@@ -63,12 +63,16 @@ preflight, deployment, verification, and rollback sections.
 
 ## Determine the release version
 
-- Derive the next version from the release manifest's formal baseline and the
-  declared versioning convention (for example `v<baseline>.<minor>-rc<n>`), not
-  from the currently running tag.
-- The running tag is evidence of what is live, not the version line. When the
-  running tag and the formal baseline differ, state both and confirm the target
-  version with the user or the orchestration contract before tagging.
+- If the target version is explicitly specified in the current request or the
+  orchestration contract, use it and record it as confirmed; do not re-ask.
+- Otherwise derive the next version from the release manifest's formal baseline
+  and the declared versioning convention (for example
+  `v<baseline>.<minor>-rc<n>`), not from the currently running tag. The running
+  tag is evidence of what is live, not the version line.
+- When the version was derived rather than explicitly specified, present the
+  formal baseline, the running tag, and the derived version, and require the
+  user to confirm it before any mutation (tagging, pushing, or deploying). A
+  read-only plan may be produced before that confirmation.
 - Never guess an increment (for example `-rc28` from `-rc27`) when the manifest
   declares a different baseline.
 
@@ -144,9 +148,9 @@ failed and blocked outcomes are the most useful signals for later retrospectives
 - Quality Gate is not PASS or tested commit differs from candidate.
 - Production or main-merge approval is required but absent.
 - Candidate artifact/tag cannot be identified.
-- The target version cannot be derived from the manifest baseline and versioning
-  convention, or the running tag conflicts with the formal baseline without
-  explicit confirmation.
+- The target version is not explicitly specified in the current request or
+  contract and has not been confirmed by the user, or it cannot be derived from
+  the manifest baseline and versioning convention.
 - Migration or backup requirements are unresolved.
 - Rollback instructions are missing or incompatible with the migration.
 - Smoke checks fail or the observation window reports degradation.
