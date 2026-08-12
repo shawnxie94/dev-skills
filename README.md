@@ -117,6 +117,7 @@ related: {}
 | 独立交付估时 | `delivery-estimation-standard` | 多个 Reviewer 需要基于完全相同的冻结输入和标准独立估时，并将模型作为主要变量进行交叉验证时。 | 逐工作项人月 O/M/P 与 PERT 估时、成熟组件复用策略、角色总量、P50/P80、假设与机器可校验 JSON。 |
 | 估时综合评审 | `synthesize-delivery-estimates` | Research Lead 需要汇总三份或更多独立估时、定位离散项并形成可信规划区间时。 | 可比性校验、中位数/范围/离散度、复核项、Lead 综合结论与审计链。 |
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
+| 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态或交互仍是未验证假设，需要在 TRD 前快速收敛 UI 时。 | 可点击 HTML 原型、页面/流程/状态清单、UI 验收点。 |
 | 代码库导向 | `codebase-orientation` | 在既有仓库里做设计、计划、调试或实现前，需要先理解系统现状时。 | 技术栈、运行验证命令、模块职责、入口路径、数据流、依赖集成、测试方式和风险边界。 |
 | 影响面分析 | `change-impact-analysis` | 某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。 | 受影响模块、接口契约、数据/配置影响、兼容风险、测试范围和后续 skill handoff。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
@@ -134,7 +135,7 @@ related: {}
 按任务复杂度选择最短可用链路，不要求每次都走完整流程：
 
 - 轻量调研：`research-brief` → `write-prd` 或 `write-trd`。
-- 正式需求分析：`research-brief`（可选）→ `requirement-deep-research` → `write-prd` → `write-trd`。
+- 正式需求分析：`research-brief`（可选）→ `requirement-deep-research` → `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
 - 多模型交叉估时：`requirement-deep-research` → 三个或更多 Reviewer 分别运行 `delivery-estimation-standard` → Research Lead 运行 `synthesize-delivery-estimates`。
 - 复杂需求交付：`write-trd` → `write-execution-plan` → `prepare-remote`（需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。

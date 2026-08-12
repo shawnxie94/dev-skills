@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prototype UI"
+  short_description: "Turn a settled PRD into a clickable prototype and UI spec"
+  default_prompt: "Use $prototype-ui to create a clickable HTML prototype and UI specification from the PRD before writing the TRD."
