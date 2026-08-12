@@ -44,6 +44,20 @@ Prepare pending changes for commit. Always review the diff first; only stage or 
    - If the final diff touches public contracts, schemas, config, permissions, caching, migrations, generated artifacts, or shared modules, run `change-impact-analysis` before staging.
    - Create a concise commit message that describes the completed change.
    - After committing, report the commit hash and final worktree state.
+6. Record the run for the feedback loop.
+   - Append a short outcome event after a material review (skip only for trivial look-ups the user did not want tracked):
+
+   ```bash
+   python3 <dev-skills>/scripts/record_skill_run.py \
+     --skill prepare-commit \
+     --status completed \
+     --validation pass \
+     --task-type commit-review \
+     --friction <short-tag> \
+     --feedback <short non-sensitive note>
+   ```
+
+   - Record `blocked` or `abandoned` outcomes too; they are the most useful signals for future retrospectives.
 
 ## Checklist
 
@@ -56,13 +70,14 @@ Always check:
 - Performance: N+1 queries, missing indexes for new query patterns, unbounded memory growth, blocking I/O on hot paths, and avoidable large loads.
 - Maintainability: unclear names, excessive nesting, magic values, conflicting local patterns, overly long functions, and unnecessary complexity.
 - Scope hygiene: unrelated changes, dead code, commented-out blocks, duplicated logic, and leftover debug output.
-- Deployability: required migrations, env vars, infrastructure, external services, feature flags, deploy order, and dev/prod differences.
+- Deployability: required migrations, env vars, infrastructure, external services, feature flags, deploy order, dev/prod differences, and app-owned default config (for example prompt templates or system settings) that existing deployments must pick up.
 - Observability: useful logs, correct log levels, trace or correlation identifiers where relevant, metrics for critical paths, and log volume.
 - Error handling and user experience: actionable user-facing errors, correct status codes, graceful degradation, retry semantics, and failure isolation.
 
 Apply these only when triggered by the diff:
 
 - Data model or persistence schema changes: check the upgrade path for existing deployments, not only fresh setup. Find the project's migration, bootstrap, entrypoint, installer, seed, or backfill mechanism and verify it applies new columns/tables/indexes/constraints idempotently to an already-created database or data store. Require a focused legacy/upgrade test or an explicit manual upgrade command when the change cannot be made automatic.
+- App-owned default config or prompt template changes: check how existing deployments pick up new defaults, not just fresh setups. Require an idempotent upgrade, seed, or backfill when old instances keep stale values, and confirm a fresh-environment smoke check shows the new default takes effect.
 - Idempotency and retry safety: for POST, PUT, PATCH, DELETE, INSERT, UPDATE, payments, orders, notifications, and message sends, check idempotency keys, deduplication, unique constraints, UPSERTs, and duplicate side effects.
 - Resource cleanup: for file I/O, database connections, HTTP clients, pools, timers, intervals, streams, iterators, or native handles, check cleanup on success, error, early return, and cancellation paths.
 - Dependency changes: for dependency manifests or lockfiles, check maintenance status, license fit, footprint, breaking changes, deprecated API removal, and known vulnerabilities.

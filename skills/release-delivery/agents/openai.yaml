@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Delivery"
+  short_description: "Safely plan and execute project releases"
+  default_prompt: "Use $release-delivery to prepare a gated project release."

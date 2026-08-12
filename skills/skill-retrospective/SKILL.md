@@ -30,6 +30,11 @@ Classify the feedback:
 - Scope issue: the skill mixed unrelated responsibilities or missed an important boundary.
 - Naming issue: the skill name was confusing or overlapped another skill.
 
+If the run log is empty or too thin, reconstruct the evidence from recent
+conversations and session artifacts before drawing conclusions. An empty log is
+itself a signal that the feedback loop is not being used; record that finding
+rather than silently proceeding without evidence.
+
 ## Retrospective Workflow
 
 1. Identify the real feedback.

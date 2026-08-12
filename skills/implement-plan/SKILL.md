@@ -15,6 +15,7 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Keep edits scoped to the current node.
 - Validate after each meaningful step, not only at the end.
 - Treat subagent output as candidate work that the main agent must review, merge, and verify.
+- Scaffolded code is not implemented. Distinguish "scaffolded" from "verified" in every completion claim and name the end-to-end chain that was actually exercised.
 - Enforce remote task `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
 - When agent-brain is present, treat its Task Pack as the outer contract and the selected dev-skill as the inner execution capability.
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
@@ -187,7 +188,27 @@ If no test is practical, state the manual verification path and residual risk be
 
 8. Finish.
    - Run final relevant validation.
+   - Before claiming a node or plan complete, list the verified chain: commands run, what they proved, and any path that remains scaffolded or unverified. A passing build or created files are not evidence that the full runtime chain works.
    - Summarize implementation, verification, deviations, residual risk, and recommended `prepare-commit` scope.
+
+## Record the Run
+
+After a node or phase finishes (including blocked or abandoned outcomes), append
+a short feedback-loop event:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill implement-plan \
+  --status completed \
+  --validation pass \
+  --task-type implementation \
+  --next-handoff prepare-commit \
+  --friction <short-tag> \
+  --feedback <short non-sensitive note>
+```
+
+Record `blocked` and `abandoned` outcomes too; they are the most useful signals
+for future retrospectives.
 
 ## Handoff Rules
 
