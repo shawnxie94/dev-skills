@@ -5,7 +5,7 @@ description: Implement an approved execution plan or remote handoff task one ver
 
 # Implement Plan
 
-Use this skill to execute an approved implementation plan without drifting from scope. The goal is to move through the plan in small, verified steps.
+Use this skill to execute an approved implementation plan without drifting from scope. The goal is to move through the plan in small, verified steps and continue automatically through the runnable dependency chain until the requested implementation batch is complete or a genuine blocker requires external input.
 
 ## Core Principles
 
@@ -20,6 +20,7 @@ Use this skill to execute an approved implementation plan without drifting from 
 - When agent-brain is present, treat its Task Pack as the outer contract and the selected dev-skill as the inner execution capability.
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
+- Treat node-level validation as an internal checkpoint. Do not stop for user confirmation after every accepted node when the user requested the full plan or feature batch.
 
 ## Mandatory Plan Preflight
 
@@ -129,6 +130,14 @@ Do not let two agents edit the same checkout simultaneously. Merge isolated resu
 
 ## Task Group Progression
 
+### Continuous batch execution
+
+- The implementation batch is the user's approved goal or the plan phase (for example, Phase A U1–U8), not one `plan_unit_id`.
+- After a node passes its required verification, immediately resolve dependencies and execute the next runnable node in the same batch.
+- Keep one active host goal for the batch; update progress internally without replacing it with a new per-node user task.
+- Return to the user only after the batch-level acceptance passes, or when a genuine blocker is reached: missing/conflicting requirements, unavailable external capability, required human/device action, irreversible external mutation, or exhausted repair/escalation gate.
+- A node's `done` state satisfies a dependency checkpoint but does not satisfy the user's overall request.
+
 For multiple tasks from the same requirement:
 
 - Use `parallel_group` or `feature` to identify the group.
@@ -197,7 +206,7 @@ If no test is practical, state the manual verification path and residual risk be
    - Re-run affected tests after resolving merge conflicts or changing shared contracts.
 
 7. Update progress.
-   - Mark completed nodes, changed nodes, skipped nodes, and plan deviations.
+   - Mark completed nodes, changed nodes, skipped nodes, and plan deviations, then continue to the next runnable node when continuous batch execution applies.
    - If the plan no longer fits reality, revise the plan before continuing.
    - If a node affects more files, modules, contracts, schemas, config, permissions, or shared state than expected, pause and run `change-impact-analysis` before continuing.
 
