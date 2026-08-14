@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Readiness"
+  short_description: "Loop delivery gates until ready or blocked"
+  default_prompt: "Use $delivery-readiness to assess this delivery gate and produce a traceable readiness report; loop with explicit repair authorization until ready or blocked."

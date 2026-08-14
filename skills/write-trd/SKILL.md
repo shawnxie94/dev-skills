@@ -88,11 +88,17 @@ When document artifact mode is enabled:
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
    - In document artifact mode, write these sections to the TRD file before the final response.
 
+9. Run the technical handoff gate.
+   - Invoke `$delivery-readiness` with `gate --stage trd_to_plan` after the TRD is complete.
+   - The report must trace material PRD requirements to technical design decisions, contracts, verification, and known risks.
+   - A `blocked` result stops execution planning; do not fill missing architecture, migration, retry, or observability decisions by silently guessing.
+
 If affected modules, contracts, data flow, or compatibility risks are unclear, run `change-impact-analysis` before finalizing the TRD.
 
 ## Handoff Rules
 
 - If the TRD is accepted and implementation sequencing is needed, hand off to `write-execution-plan`.
+- Before that handoff, use `$delivery-readiness` at `trd_to_plan`; use `loop --repair` only with explicit authorization to change the TRD.
 - If impact scope is unclear, hand off to `change-impact-analysis`.
 - If the user asks to implement directly, recommend `write-execution-plan` first unless the change is trivial.
 

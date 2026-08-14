@@ -80,9 +80,15 @@ When document artifact mode is enabled:
    - Summarize what the technical design or execution plan must consider next.
    - In document artifact mode, write these sections to the PRD file before the final response.
 
+8. Run the delivery handoff gate.
+   - Invoke `$delivery-readiness` with `gate --stage prd_to_trd` after the PRD is complete.
+   - Carry the readiness report path, source artifact hashes, and unresolved decisions with the PRD.
+   - A `blocked` result stops the handoff. Do not hide an open product decision inside a technical assumption.
+
 ## Handoff Rules
 
 - If technical design is requested after the PRD, hand off to `write-trd`.
+- Before that handoff, use `$delivery-readiness` at `prd_to_trd`; use `loop --repair` only when the user explicitly asks to repair the PRD until ready.
 - If affected modules, data, contracts, or compatibility risks are unclear, hand off to `change-impact-analysis`.
 - If the user asks to implement immediately, recommend `write-trd` and `write-execution-plan` first unless the change is trivial.
 

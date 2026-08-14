@@ -21,6 +21,14 @@ Use this skill after the TRD or technical direction is clear enough to plan impl
 
 When the plan will be implemented by `agent-brain` or `implement-plan`, the plan must be materialized as a canonical workspace artifact. Chat output alone is not a valid implementation handoff, even when document artifact mode is disabled.
 
+Before creating a Build Task Pack or handing the plan to `agent-brain`, run
+`$delivery-readiness` with `gate --stage plan_to_build`. This separate
+cross-artifact gate confirms the approved canonical plan, DAG/dependencies,
+write ownership, allowed paths, acceptance IDs, verification commands, and
+linkage to the current plan/base commit. Record the readiness report and its
+SHA-256 in the Task Pack `source_artifacts` and readiness fields. A stale or
+blocked report must stop at planning.
+
 The canonical artifact is normally `docs/plans/<feature-slug>-execution-plan.md` (or the configured execution-plan path) and must include frontmatter with at least:
 
 ```yaml
@@ -42,6 +50,10 @@ Before handing off, run and report:
 git rev-parse HEAD
 shasum -a 256 docs/plans/<feature-slug>-execution-plan.md
 ```
+
+Then verify the readiness artifact and plan linkage again after any plan edit.
+If `loop --repair` changes the plan, recompute the plan SHA-256 and rerun the
+full `plan_to_build` gate; do not repair a stale Task Pack by guessing hashes.
 
 An implementation handoff is incomplete until the plan is approved, the artifact path and hash are reported, and each runnable unit has a bounded Task Pack linkage. If the user asked for implementation immediately, approval may be the explicit approval in that same turn; otherwise stop after writing the plan.
 
