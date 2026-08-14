@@ -1,2 +1,8 @@
 # local graphify output
 graphify-out/
+
+# local workspace behavior switch (for example document artifact mode)
+.dev-skills/
+
+# agent-brain local attach surface, when this repo is attached
+.agent/

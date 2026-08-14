@@ -158,7 +158,12 @@ Per-item optimistic/most-likely/pessimistic values, assumption lists, and role a
 
 ## Document Artifact Mode
 
-If `.dev-skills/config.toml` enables `[document_artifacts]`, write the estimate to `docs/estimates/` or `document_artifacts.paths.delivery_estimates` when configured. Use a stable name such as `docs/estimates/<packet-id>-<reviewer-id>.json`.
+If `.agent/config.toml` exists, use its `[document_artifacts]` section. Only
+when it does not exist should standalone dev-skills read
+`.dev-skills/config.toml`. When enabled, write the estimate to
+`docs/estimates/` or `document_artifacts.paths.delivery_estimates` when
+configured. Use a stable name such as
+`docs/estimates/<packet-id>-<reviewer-id>.json`.
 
 On Multica / managed-issue runs, attach the estimate JSON as the SoT artifact and keep the thread comment to the Decision Card.
 

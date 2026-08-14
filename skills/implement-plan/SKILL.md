@@ -52,7 +52,8 @@ Use Remote Task Bootstrap only when no explicit assigned plan, issue, task packe
 
 When this skill is invoked in a repository without an explicit plan, assigned managed-platform issue, task path, or current-node context:
 
-1. Check the current working directory for `.dev-skills/config.toml`.
+1. Check `.agent/config.toml`; only when it does not exist should a standalone
+   dev-skills workspace fall back to `.dev-skills/config.toml`.
    - If `document_artifacts.paths.task_ready` is configured, use that as the ready-task directory.
    - Otherwise use `tasks/ready/`.
 2. Look for ready remote task packets in that directory.

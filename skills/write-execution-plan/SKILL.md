@@ -73,9 +73,11 @@ Extract:
 
 ## Document Artifact Mode
 
-Before producing the execution plan, check the current working directory for `.dev-skills/config.toml`.
+Before producing the execution plan, check `.agent/config.toml`. If it exists,
+use its `[document_artifacts]` section; only when it does not exist should a
+standalone dev-skills workspace fall back to `.dev-skills/config.toml`.
 
-Document artifact mode is enabled only when that file exists and contains:
+Document artifact mode is enabled when the first available config contains:
 
 ```toml
 [document_artifacts]

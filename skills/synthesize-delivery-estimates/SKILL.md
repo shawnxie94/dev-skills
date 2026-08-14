@@ -116,7 +116,11 @@ The report must include:
 
 ## Document Artifact Mode
 
-If `.dev-skills/config.toml` enables `[document_artifacts]`, write machine comparison JSON and the Lead report to `docs/estimates/` or `document_artifacts.paths.delivery_estimates` when configured. Suggested names:
+If `.agent/config.toml` exists, use its `[document_artifacts]` section. Only
+when it does not exist should standalone dev-skills read
+`.dev-skills/config.toml`. When enabled, write machine comparison JSON and the
+Lead report to `docs/estimates/` or `document_artifacts.paths.delivery_estimates`
+when configured. Suggested names:
 
 - `docs/estimates/<packet-id>-comparison.json`
 - `docs/estimates/<packet-id>-consensus.md`

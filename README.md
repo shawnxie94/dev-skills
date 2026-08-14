@@ -15,11 +15,16 @@
 
 默认情况下，skills 只在对话中输出结构化结果，不强制创建或更新文件。
 
-如果某个工作区希望把 PRD、TRD、执行计划等过程结果沉淀为可管理的文档资产，可以在当前工作目录内添加：
+如果某个工作区希望把 PRD、TRD、执行计划等过程结果沉淀为可管理的文档资产，agent-brain 管理的项目应在 `.agent/config.toml` 中添加：
 
 ```text
-.dev-skills/config.toml
+.agent/config.toml
 ```
+
+独立使用 dev-skills、没有 agent-brain attach surface 的工作区，仍可使用
+`.dev-skills/config.toml` 作为兼容入口。若 `.agent/config.toml` 存在，则只
+读取其中的 `[document_artifacts]`；只有 `.agent/config.toml` 不存在时，才回退
+读取 `.dev-skills/config.toml`。
 
 最小配置：
 
@@ -27,6 +32,12 @@
 [document_artifacts]
 enabled = true
 ```
+
+This is a workspace-local behavior switch rather than a shared skill source
+file, so `.agent/` and standalone `.dev-skills/` configuration should normally
+remain gitignored. If a team wants to standardize artifact mode, it can
+explicitly force-add the config or copy the same setting into its own project
+convention.
 
 开启后，支持该模式的 skill 必须把主要产物写入工作区文件，并在回复中给出文件路径和简短摘要。缺失配置文件、缺失 `document_artifacts.enabled`，或值不是 `true` 时，都按关闭处理。
 

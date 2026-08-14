@@ -154,7 +154,13 @@ The packet must make explicit:
 
 ## Document Artifact Mode
 
-If `.dev-skills/config.toml` enables `[document_artifacts]`, write the packet to `docs/research/` or `document_artifacts.paths.research` when configured. Use a stable filename such as `docs/research/<requirement-slug>-research.md` and include frontmatter with `id`, `type: requirement_research`, `status`, `version`, `created_at`, `updated_at`, `sources`, and `related`.
+If `.agent/config.toml` exists, use its `[document_artifacts]` section. Only
+when it does not exist should standalone dev-skills read
+`.dev-skills/config.toml`. When enabled, write the packet to `docs/research/`
+or `document_artifacts.paths.research` when configured. Use a stable filename
+such as `docs/research/<requirement-slug>-research.md` and include frontmatter
+with `id`, `type: requirement_research`, `status`, `version`, `created_at`,
+`updated_at`, `sources`, and `related`.
 
 On Multica / managed-issue runs, attach the packet file as the SoT artifact and keep the thread comment to the Decision Card above.
 
