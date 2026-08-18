@@ -17,19 +17,19 @@ Use this skill after the TRD or technical direction is clear enough to plan impl
 - Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal.
 - Give every task stable contract linkage: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id` when an outer Task Pack exists, `source_artifacts`, `source_hash`, `acceptance_ids`, and `evidence_required`.
 
-## Implementation Handoff Gate
+## Implementation Handoff Ownership
 
-When the plan will be implemented by `agent-brain` or `implement-plan`, the plan must be materialized as a canonical workspace artifact. Chat output alone is not a valid implementation handoff, even when document artifact mode is disabled.
+This skill owns the canonical execution-plan artifact, its DAG, sequencing,
+write ownership, and plan hash. When the plan will be implemented by
+`agent-brain` or `implement-plan`, materialize it on disk with `status:
+approved`; chat-only prose is not a handoff.
 
-Before creating a Build Task Pack or handing the plan to `agent-brain`, run
-`$delivery-readiness` with `gate --stage plan_to_build`. This separate
-cross-artifact gate confirms the approved canonical plan, DAG/dependencies,
-write ownership, allowed paths, acceptance IDs, verification commands, and
-linkage to the current plan/base commit. Record the readiness report and its
-SHA-256 in the Task Pack `source_artifacts` and readiness fields. A stale or
-blocked report must stop at planning.
+`delivery-readiness` owns the cross-stage `plan_to_build` assessment and report.
+`agent-brain` owns the outer Task Pack, allowed paths, acceptance lifecycle,
+and Task Pack linkage. Do not duplicate those contracts here: emit the shared
+identity fields below and hand off to agent-brain for Task Pack creation.
 
-The canonical artifact is normally `docs/plans/<feature-slug>-execution-plan.md` (or the configured execution-plan path) and must include frontmatter with at least:
+The canonical artifact is normally `docs/plans/<feature-slug>-execution-plan.md` (or the configured execution-plan path) and includes frontmatter with at least:
 
 ```yaml
 id: <stable plan id>
@@ -44,18 +44,17 @@ base_commit: <git commit used for planning>
 
 `source_plan_sha256` is the SHA-256 of the complete canonical plan file and is recorded in downstream Task Packs; do not put the file's own hash into its frontmatter because that would create a circular hash. `plan_id`, `base_commit`, source artifacts, and plan-unit IDs must remain stable between planning and implementation.
 
-Before handing off, run and report:
+Before handing off, report:
 
 ```bash
 git rev-parse HEAD
 shasum -a 256 docs/plans/<feature-slug>-execution-plan.md
 ```
 
-Then verify the readiness artifact and plan linkage again after any plan edit.
-If `loop --repair` changes the plan, recompute the plan SHA-256 and rerun the
-full `plan_to_build` gate; do not repair a stale Task Pack by guessing hashes.
-
-An implementation handoff is incomplete until the plan is approved, the artifact path and hash are reported, and each runnable unit has a bounded Task Pack linkage. If the user asked for implementation immediately, approval may be the explicit approval in that same turn; otherwise stop after writing the plan.
+After any plan edit, recompute the plan hash and hand the current artifact to
+`delivery-readiness` and then agent-brain. If the user asked for implementation
+immediately, the current-turn approval may authorize the handoff; otherwise
+stop after writing the approved plan.
 
 ## Inputs to Look For
 
@@ -84,7 +83,7 @@ Document artifact mode is enabled when the first available config contains:
 enabled = true
 ```
 
-When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Gate above still requires a canonical plan artifact.
+When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Ownership section above still requires a canonical plan artifact.
 
 When document artifact mode is enabled:
 

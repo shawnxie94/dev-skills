@@ -91,15 +91,14 @@ When this skill is invoked in a repository without an explicit plan, assigned ma
 
 ### Agent-brain Contract Bridge
 
-When the current task has an agent-brain run directory or Task Pack:
-
-1. Validate the Task Pack strictly before editing; require non-empty `allowed_paths` and at least one acceptance check.
-2. Run the Mandatory Plan Preflight. A Task Pack with `plan_unit_id` but missing or stale `plan_id` / `source_plan_sha256` / `base_commit` is blocked even if `validate-task-pack` returns OK.
-3. Confirm `required_skills` includes the skills needed by this node and that `plan_unit_id` / `task_id` match the assigned handoff.
-4. Treat Task Pack `acceptance` as canonical. The generated Acceptance Pack must carry the matching source hash.
-5. Run acceptance and scope checks through the brain scripts. Manual checks are `pending` until explicitly acknowledged.
-6. Report Done only when machine evidence says `overall: pass` (or the user explicitly owns a residual-risk skip); do not convert a host goal or prose summary into Done.
-7. Before starting parallel work, verify normalized write ownership, mutex, branch, worktree, and base commit; overlapping or unisolated writes are serial blockers, while read-only tasks do not require worktrees.
+When agent-brain is present, it owns the outer Task Pack, allowed paths,
+acceptance lifecycle, and final scope result. This skill owns only the current
+plan node's implementation and verification. Run the brain validators and
+acceptance commands named by the Task Pack; do not recreate the Task Pack or
+replace its evidence with a prose summary. Keep the shared linkage fields
+(`plan_id`, `plan_unit_id`, `source_plan_sha256`, `base_commit`, and readiness
+identity) unchanged. Use the plan's write ownership and the parallelism rules
+below for node execution.
 
 ## Parallelism And Worktree Decision
 
