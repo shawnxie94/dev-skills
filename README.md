@@ -48,7 +48,7 @@ docs/research/
 docs/estimates/
 docs/prd/
 docs/trd/
-plans/
+docs/plans/
 tasks/draft/
 tasks/ready/
 tasks/in-progress/
@@ -65,7 +65,7 @@ research = "docs/research"
 delivery_estimates = "docs/estimates"
 prd = "docs/prd"
 trd = "docs/trd"
-execution_plan = "plans"
+execution_plan = "docs/plans"
 task_draft = "tasks/draft"
 task_ready = "tasks/ready"
 task_in_progress = "tasks/in-progress"
