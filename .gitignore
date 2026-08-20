@@ -1,5 +1,5 @@
-# local graphify output
-graphify-out/
+# local CodeGraph index
+.codegraph/
 
 # local workspace behavior switch (for example document artifact mode)
 .dev-skills/

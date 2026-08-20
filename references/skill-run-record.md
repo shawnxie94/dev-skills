@@ -9,7 +9,7 @@ python3 <dev-skills>/scripts/record_skill_run.py \
   --validation pass \
   --task-type orientation \
   --next-handoff write-trd \
-  --friction graphify-no-api-key
+  --friction codegraph-no-index
 ```
 
 The default log is `~/.codex/dev-skills-runs.jsonl`. Set `DEV_SKILLS_RUN_LOG` or pass `--path` to use another local file. The record intentionally stores only outcome metadata, short friction tags, and optional short feedback; do not put the original prompt, source code, secrets, or sensitive business data in it.

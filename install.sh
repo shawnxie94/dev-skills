@@ -84,53 +84,71 @@ resolve_link() {
   fi
 }
 
-ensure_graphify() {
-  info "checking graphify"
-  if command -v graphify >/dev/null 2>&1; then
-    ok "graphify found: $(command -v graphify)"
+CODEGRAPH_INSTALL_URL="https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh"
+CODEGRAPH_BIN=""
+
+find_codegraph() {
+  if command -v codegraph >/dev/null 2>&1; then
+    command -v codegraph
     return 0
   fi
-
-  local has_python_import=0
-  if command -v python3 >/dev/null 2>&1 && python3 -c "import graphify" >/dev/null 2>&1; then
-    has_python_import=1
+  if [ -x "$HOME/.local/bin/codegraph" ]; then
+    printf "%s\n" "$HOME/.local/bin/codegraph"
+    return 0
   fi
+  return 1
+}
 
-  if [ "$has_python_import" = 1 ]; then
-    warn "graphify Python package is installed, but the graphify CLI is not on PATH; installing graphifyy tool"
+ensure_codegraph() {
+  info "checking codegraph"
+  CODEGRAPH_BIN="$(find_codegraph || true)"
+  if [ -n "$CODEGRAPH_BIN" ]; then
+    ok "codegraph found: $CODEGRAPH_BIN"
   else
-    warn "graphify not found; installing graphifyy"
-  fi
-
-  if command -v uv >/dev/null 2>&1; then
-    run uv tool install --upgrade graphifyy
-  elif command -v python3 >/dev/null 2>&1; then
-    if [ "$DRY_RUN" = 1 ]; then
-      run python3 -m pip install graphifyy
-    elif ! python3 -m pip install graphifyy; then
-      python3 -m pip install graphifyy --break-system-packages
+    warn "codegraph not found; installing the official local binary"
+    if command -v curl >/dev/null 2>&1; then
+      local installer_file
+      installer_file="$(mktemp "${TMPDIR:-/tmp}/codegraph-install.XXXXXX")"
+      if [ "$DRY_RUN" = 1 ]; then
+        run curl -fsSL "$CODEGRAPH_INSTALL_URL" -o "$installer_file"
+        run sh "$installer_file"
+        run rm -f "$installer_file"
+      elif curl -fsSL "$CODEGRAPH_INSTALL_URL" -o "$installer_file" && sh "$installer_file"; then
+        rm -f "$installer_file"
+      else
+        rm -f "$installer_file"
+        warn "official CodeGraph installer failed; trying npm fallback"
+      fi
     fi
-  else
-    err "graphify requires uv or python3 to install graphifyy"
-    exit 1
+    if [ "$DRY_RUN" = 1 ]; then
+      return 0
+    fi
+    if [ -z "$(find_codegraph || true)" ] && command -v npm >/dev/null 2>&1; then
+      run npm install -g @colbymchenry/codegraph
+    elif [ -z "$(find_codegraph || true)" ]; then
+      err "codegraph requires curl or npm to install"
+      exit 1
+    fi
+    CODEGRAPH_BIN="$(find_codegraph || true)"
   fi
 
   if [ "$DRY_RUN" = 1 ]; then
     return 0
   fi
-
-  if command -v graphify >/dev/null 2>&1; then
-    ok "graphify installed: $(command -v graphify)"
-    return 0
+  if [ -z "$CODEGRAPH_BIN" ]; then
+    err "codegraph installation could not be verified; open a new shell if ~/.local/bin is not on PATH"
+    exit 1
   fi
-
-  if command -v uv >/dev/null 2>&1 && uv tool run graphifyy python -c "import graphify" >/dev/null 2>&1; then
-    warn "graphify package installed, but graphify CLI is still not on PATH; add uv's tool bin directory to PATH"
-    return 0
+  if ! "$CODEGRAPH_BIN" --version >/dev/null 2>&1; then
+    err "codegraph was found but could not run: $CODEGRAPH_BIN"
+    exit 1
   fi
+  ok "codegraph ready: $($CODEGRAPH_BIN --version)"
 
-  err "graphify installation could not be verified"
-  exit 1
+  if [ "${CODEGRAPH_CONFIGURE_CODEX:-1}" = 1 ]; then
+    info "configuring CodeGraph for Codex"
+    run "$CODEGRAPH_BIN" install --target=codex --yes
+  fi
 }
 
 # ---------- preflight ----------
@@ -220,6 +238,6 @@ do_uninstall() {
 }
 
 case "$ACTION" in
-  install)   ensure_graphify; printf "\n"; do_install ;;
+  install)   ensure_codegraph; printf "\n"; do_install ;;
   uninstall) do_uninstall ;;
 esac

@@ -192,7 +192,7 @@ TRD / settled scope
 
 ## Installation
 
-仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到 `~/.codex/skills/`（可用 `CODEX_HOME` 覆盖目标 Codex 目录）。安装时会检测 `graphify` 是否可用，缺失时通过 `uv tool install --upgrade graphifyy` 或 `python3 -m pip install graphifyy` 安装。
+仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到 `~/.codex/skills/`（可用 `CODEX_HOME` 覆盖目标 Codex 目录）。安装时会检测 `codegraph` 是否可用，缺失时通过官方 macOS/Linux 安装脚本或 `npm install -g @colbymchenry/codegraph` 安装，并默认执行 `codegraph install --target=codex --yes` 写入 Codex 的 MCP 配置。可设置 `CODEGRAPH_CONFIGURE_CODEX=0` 跳过配置写入。
 
 ```bash
 cd /path/to/dev-skills
