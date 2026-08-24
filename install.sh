@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# install.sh — symlink dev-skills/* into local Codex
+# install.sh — symlink dev-skills/* into a local agent runtime
 #
 # Usage:
-#   ./install.sh                 install (idempotent, default)
+#   ./install.sh                 install for Codex (idempotent, default)
+#   ./install.sh --target claude install for Claude Code
 #   ./install.sh --uninstall     remove dev-skills symlinks only
 #   ./install.sh --dry-run       show what would change, change nothing
 #   ./install.sh -h | --help     show this help
 #
 # Env:
-#   CODEX_HOME   target Codex home (default: $HOME/.codex)
+#   DEV_SKILLS_TARGET  default target (codex)
+#   CODEX_HOME         target Codex home (default: $HOME/.codex)
+#   CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
 set -euo pipefail
 
 # ---------- locate this script (works through symlinks) ----------
@@ -22,34 +25,61 @@ SCRIPT_DIR="$(cd -P "$(dirname "$_src")" && pwd)"
 
 REPO_DIR="$SCRIPT_DIR"
 SKILLS_SRC="$REPO_DIR/skills"
+TARGET="${DEV_SKILLS_TARGET:-codex}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-SKILLS_DST="$CODEX_HOME/skills"
+CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+SKILLS_DST=""
+CODEGRAPH_TARGET=""
 
 # ---------- options ----------
 ACTION="install"
 DRY_RUN=0
 print_help() {
   cat <<'EOF'
-install.sh — symlink dev-skills/* into local Codex
+install.sh — symlink dev-skills/* into a local agent runtime
 
 Usage:
-  ./install.sh                 install (idempotent, default)
+  ./install.sh                 install for Codex (idempotent, default)
+  ./install.sh --target claude install for Claude Code
   ./install.sh --uninstall     remove dev-skills symlinks only
   ./install.sh --dry-run       show what would change, change nothing
   ./install.sh -h | --help     show this help
 
 Env:
-  CODEX_HOME   target Codex home (default: $HOME/.codex)
+  DEV_SKILLS_TARGET  default target (codex)
+  CODEX_HOME         target Codex home (default: $HOME/.codex)
+  CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
 EOF
 }
 while [ $# -gt 0 ]; do
   case "$1" in
     -u|--uninstall) ACTION="uninstall"; shift ;;
     -n|--dry-run)   DRY_RUN=1; shift ;;
+    --target)
+      [ $# -ge 2 ] || { echo "install.sh: --target requires codex or claude" >&2; exit 2; }
+      TARGET="$2"
+      shift 2
+      ;;
+    --target=*) TARGET="${1#*=}"; shift ;;
     -h|--help)      print_help; exit 0 ;;
     *) echo "install.sh: unknown option: $1" >&2; print_help >&2; exit 2 ;;
   esac
 done
+
+case "$TARGET" in
+  codex)
+    SKILLS_DST="$CODEX_HOME/skills"
+    CODEGRAPH_TARGET="codex"
+    ;;
+  claude)
+    SKILLS_DST="$CLAUDE_HOME/skills"
+    CODEGRAPH_TARGET="claude"
+    ;;
+  *)
+    echo "install.sh: unsupported target '$TARGET' (expected codex or claude)" >&2
+    exit 2
+    ;;
+esac
 
 # ---------- pretty output ----------
 if [ -t 1 ]; then
@@ -145,9 +175,9 @@ ensure_codegraph() {
   fi
   ok "codegraph ready: $($CODEGRAPH_BIN --version)"
 
-  if [ "${CODEGRAPH_CONFIGURE_CODEX:-1}" = 1 ]; then
-    info "configuring CodeGraph for Codex"
-    run "$CODEGRAPH_BIN" install --target=codex --yes
+  if [ "${CODEGRAPH_CONFIGURE:-${CODEGRAPH_CONFIGURE_CODEX:-1}}" = 1 ]; then
+    info "configuring CodeGraph for $TARGET"
+    run "$CODEGRAPH_BIN" install --target="$CODEGRAPH_TARGET" --yes
   fi
 }
 
@@ -170,6 +200,7 @@ fi
 
 info "repo:   $REPO_DIR"
 info "source: $SKILLS_SRC"
+info "runtime: $TARGET"
 info "target: $SKILLS_DST"
 info "action: $ACTION"
 [ "$DRY_RUN" = 1 ] && info "mode:   dry-run"
