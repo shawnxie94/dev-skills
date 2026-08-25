@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -66,6 +67,21 @@ def load_manifest(project: Path, explicit_profile: Path | None = None) -> tuple[
     if not runbook.is_file():
         raise ContractError(f"manifest runbook is missing: {runbook}")
     return manifest, manifest_path, runbook
+
+
+def logical_profile_path(project: Path, explicit_profile: Path | None) -> Path:
+    """Return the user-facing profile path without resolving symlinks."""
+
+    profile = explicit_profile or project / ".agent/project-profile"
+    if not profile.is_absolute():
+        profile = Path.cwd() / profile
+    return profile
+
+
+def display_path(project: Path, path: Path) -> str:
+    """Serialize a path relative to the project root for portable artifacts."""
+
+    return os.path.relpath(path, project).replace(os.sep, "/")
 
 
 def validate_manifest(data: dict[str, Any]) -> list[str]:
@@ -135,7 +151,8 @@ def build_plan(
     rollback_evidence: str,
     migration_evidence: str,
 ) -> dict[str, Any]:
-    manifest, manifest_path, runbook = load_manifest(project, profile_dir)
+    manifest, _, runbook = load_manifest(project, profile_dir)
+    logical_profile = logical_profile_path(project, profile_dir)
     if environment not in manifest["environments"]:
         raise ContractError(
             f"environment {environment!r} is not declared; available={manifest['environments']}"
@@ -176,12 +193,12 @@ def build_plan(
         "environment": environment,
         "candidate_commit_sha": candidate,
         "artifact_digest_or_tag": artifact,
-        "manifest": str(manifest_path),
-        "runbook": str(runbook),
+        "manifest": display_path(project, logical_profile / "release.yaml"),
+        "runbook": display_path(project, logical_profile / str(manifest["runbook"])),
         "approval_policy": approval_policy,
         "approval_evidence": approval,
         "merge_approval_evidence": merge_approval,
-        "quality_gate_evidence": str(quality_gate) if quality_gate else "",
+        "quality_gate_evidence": display_path(project, quality_gate) if quality_gate else "",
         "readiness_evidence": evidence,
         "runbook_sections": sections,
         "required_evidence": manifest["required_evidence"],
@@ -249,12 +266,12 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.command == "inspect":
-            manifest, manifest_path, runbook = load_manifest(
-                args.project.resolve(), args.profile_dir
-            )
+            project = args.project.resolve()
+            manifest, _, runbook = load_manifest(project, args.profile_dir)
+            logical_profile = logical_profile_path(project, args.profile_dir)
             output = {
-                "manifest": str(manifest_path),
-                "runbook": str(runbook),
+                "manifest": display_path(project, logical_profile / "release.yaml"),
+                "runbook": display_path(project, logical_profile / str(manifest["runbook"])),
                 "project": manifest["project"],
                 "environments": manifest["environments"],
                 "approval": manifest["approval"],
@@ -280,7 +297,10 @@ def main() -> int:
             errors = validate_result(data)
             if errors:
                 raise ContractError("; ".join(errors))
-            output = {"status": "valid", "result": str(args.result)}
+            output = {
+                "status": "valid",
+                "result": display_path(Path.cwd().resolve(), args.result),
+            }
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
     except ContractError as exc:

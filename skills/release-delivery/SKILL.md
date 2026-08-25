@@ -61,6 +61,10 @@ environment, candidate/QG identity, configured merge and environment approvals,
 manifest-required readiness evidence, and whether the runbook exposes
 preflight, deployment, verification, and rollback sections.
 
+Planner output serializes manifest, runbook, and quality-gate paths relative to
+the project root. Release result records should use the same project-relative
+runbook convention.
+
 ## Determine the release version
 
 - If the target version is explicitly specified in the current request or the
