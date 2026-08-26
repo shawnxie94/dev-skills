@@ -1,4 +1,4 @@
 interface:
   display_name: "Prototype UI"
   short_description: "Turn a settled PRD into a clickable prototype and UI spec"
-  default_prompt: "Use $prototype-ui to create a clickable HTML prototype and UI specification from the PRD before writing the TRD."
+  default_prompt: "Use $prototype-ui to create a clickable HTML prototype and UI specification from the PRD before writing the TRD. Default to a local static prototype; use OpenDesign for connected project-context visual exploration, or huashu-design for visual-first HTML, high-fidelity directions, decks, animation, and infographics when explicitly useful. Select one visual provider per run unless a comparison is requested, and materialize the reviewed artifact back into the repository."
