@@ -1,20 +1,24 @@
 ---
 name: prototype-ui
-description: Turn a settled PRD or product scope into a clickable HTML prototype plus a UI specification that feeds the TRD and implementation. Use when product requirements are already documented but layout, flow, states, or interactions are still unverified assumptions, or when the user asks for a prototype, wireframe, mockup, 原型, 线框, or UI design before technical design. Focus on information architecture, key flows, states, and acceptance points; reuse existing UI stacks and design tokens instead of inventing a visual system.
+description: "Turn a settled PRD or product scope into a complete design-stage handoff: visual direction, clickable HTML prototype, and UI specification for the TRD and implementation. Use when product requirements are documented but layout, flow, states, visual direction, or interactions are still unverified assumptions, or when the user asks for a prototype, wireframe, mockup, 原型, 线框, or UI design before technical design. Keep the workflow repository-bound; use Huashu, OpenDesign, or Figma only as optional external providers."
 ---
 
 # Prototype UI
 
-Build a clickable prototype and UI specification from a settled PRD before the
-TRD. The goal is to surface unverified UI assumptions cheaply, not to produce
-production UI.
+Own the design-stage workflow from a settled PRD to a reviewed prototype and UI
+specification before the TRD. The workflow includes information architecture,
+interaction and state design, visual direction, prototype verification, and
+handoff. The result is design evidence and implementation constraints, not
+production UI or a governed design system.
 
 ## Core Principles
 
-- Prototype flows and states, not visual polish. Invoke `frontend-design` only
-  when the user asks for a visual direction.
+- Prototype flows, states, and visual intent. Visual direction is part of this
+  skill's workflow; do not require or invoke a separate visual-design skill.
 - Reuse the repository's existing UI stack, components, and design tokens when
-  present; otherwise use plain HTML/CSS with demo data.
+  present. When no system exists or visual exploration is explicitly requested,
+  define a temporary prototype token set and record it as such; do not imply
+  production design-system governance.
 - Keep the prototype single-file or a small static set; no build tooling.
 - Keep the UI specification and the repository-materialized prototype as the
   source of truth. A design workspace or visual generator is an optional
@@ -25,22 +29,51 @@ production UI.
 - The UI spec is the primary handoff artifact; the prototype is evidence that
   the flows work.
 
+## Design Workflow
+
+Run the following design activities inside this skill. Do not hand off the
+visual-design stage to another skill merely because the result needs a stronger
+visual point of view.
+
+1. Extract the product subject, audience, and the primary job of each screen.
+2. Define the screen map, key flows, and required states before styling.
+3. Write a compact visual brief:
+   - 4–6 named colors and their semantic roles;
+   - display, body, and utility typography roles when needed;
+   - layout, density, spacing, radius, and surface principles;
+   - one memorable signature element appropriate to the product;
+   - motion, responsive, keyboard-focus, and reduced-motion rules.
+4. Review the direction against the brief before building. Remove choices that
+   look like generic AI defaults unless the product genuinely calls for them.
+5. Use content as interface material: labels describe user actions, copy stays
+   specific and conversational, and empty/error states explain the next step.
+6. After building, critique the result for hierarchy, consistency, task clarity,
+   responsive behavior, accessibility basics, and unnecessary decoration.
+
+Visual exploration must serve the product subject and user task. A distinctive
+direction is useful only when it remains legible, coherent, and implementable.
+
 ## Prototype Provider
 
-Choose the smallest provider that can validate the open UI assumptions:
+`local-static` is the built-in implementation path and fallback. When an
+external provider is useful, choose exactly one of the following per run unless
+the user explicitly requests a comparison or two-stage workflow:
 
-- `local-static` (default): write the prototype directly in the repository.
-  Use this for flow/state validation, ordinary TRD input, or when no visual
-  direction is requested.
-- `opendesign` (optional): use the connected OpenDesign MCP for high-fidelity
-  visual exploration when the user asks for brand-grade output, a design
-  system, multiple coordinated screens, responsive/animated treatment, or a
-  visual artifact worth iterating on.
-- `huashu-design` (optional): use the installed HTML-native design skill when
-  visual direction, high-fidelity presentation, animation, infographics, or
-  multiple visual variants are the main uncertainty. It is a visual delivery
-  provider, not a replacement for the local UI-spec handoff or a production
+- `huashu-design`: use for visual-direction exploration, high-fidelity HTML,
+  animation, infographics, or multiple visual variants. It is a visual delivery
+  provider, not a replacement for the local UI-spec handoff or production
   application architecture.
+- `opendesign`: use the connected OpenDesign MCP when project context, a
+  coordinated design workspace, design-system exploration, or responsive
+  multi-screen treatment is the material advantage.
+- `figma`: use a connected Figma app or integration when editability, shared
+  components, manual refinement, or ongoing design-asset maintenance is the
+  material advantage. If Figma is unavailable, report that limitation and use
+  `local-static` or another explicitly selected provider.
+
+Provider selection does not change the design contract: the screen map, flows,
+states, visual brief, acceptance points, and local UI spec remain owned by this
+skill.
 
 When `opendesign` is selected:
 
@@ -78,6 +111,19 @@ When `huashu-design` is selected:
    checks. Do not treat a screenshot, PPTX, or video export as proof that the
    promised product flow works.
 
+When `figma` is selected:
+
+1. Confirm that the Figma file or connected integration is accessible before
+   treating it as a provider input.
+2. Use Figma for editable visual assets, components, and manual refinement; do
+   not assume that a Figma file alone proves the product flow works.
+3. Record the relevant file, page, frame, component, and variable decisions in
+   the local UI spec without making the repository depend on an unreachable
+   Figma URL.
+4. Materialize the review evidence needed for implementation under the
+   repository when possible (screenshots, exports, or a local prototype), and
+   run browser verification for promised interactions.
+
 ## Inputs
 
 - Settled PRD or product scope, platform, and audience constraints.
@@ -94,19 +140,17 @@ When `huashu-design` is selected:
 2. Define the screen map.
    - One line per screen: purpose, entry/exit, key states, and which flows must
      be clickable.
-3. Select the prototype provider.
-   - Use `local-static` unless the scope explicitly needs visual exploration or
-     the user asks for a visual provider.
-   - Use `opendesign` when the connected project context, design-system
-     workspace, coordinated artifacts, or responsive treatment is the main
-     advantage.
-   - Use `huashu-design` when visual direction, high-fidelity HTML, decks,
-     animation, or infographics are the main uncertainty.
-   - If using `opendesign` or `huashu-design`, preserve the screen map and
-     acceptance points as the local constraints for the visual draft.
-   - Select one visual provider per run unless the user explicitly requests a
-     comparison or a two-stage workflow.
-4. Build the prototype.
+3. Establish the visual direction.
+   - Reuse existing tokens and components when they exist.
+   - Otherwise create the compact visual brief defined above.
+   - Record which visual choices are fixed and which remain exploratory.
+4. Select the prototype provider.
+   - Use `local-static` for ordinary flow/state validation or when no external
+     provider is available.
+   - Select one external provider only when its specific advantage is material.
+   - Preserve the screen map, visual brief, and acceptance points as local
+     constraints for the provider output.
+5. Build or materialize the prototype.
    - Write `docs/prototype/index.html` (single file preferred) with the repo's
      tokens/components when present; otherwise a small inline token set and
      demo data.
@@ -114,15 +158,15 @@ When `huashu-design` is selected:
      before treating it as the prototype under review.
    - Cover key flows end to end, including at least one empty and one error
      state where the PRD implies them.
-5. Verify interactions in a browser.
+6. Verify interactions in a browser.
    - Open the prototype in a real browser (playwright/browser tooling) and
      click through every promised flow; fix broken navigation or states.
    - Record what was verified and what remains a wireframe.
-6. Write the UI spec.
+7. Write the UI spec.
    - Read `references/ui-spec-template.md` and produce
      `docs/prototype/ui-spec.md` (or the repository's document-artifacts
      convention).
-7. Report.
+8. Report.
    - Summarize verified flows, open UI assumptions, and handoff to `write-trd`.
 
 ## Outputs
@@ -146,21 +190,22 @@ When `huashu-design` is selected:
 
 - Hand the UI spec to `write-trd` as the UI input.
 - If the PRD is missing or unsettled, hand off to `write-prd` first.
-- If a visual direction is needed, hand off to `frontend-design`; do not
-  duplicate it here.
 - If OpenDesign was used, hand off the materialized repository artifact and the
   local UI spec together; OpenDesign remains an optional production provider,
   not a replacement for `prototype-ui` or `write-trd`.
 - If Huashu was used, hand off the materialized HTML/evidence and the local UI
   spec together; keep the Huashu skill's optional export and cloud capabilities
   out of the required product handoff unless the user explicitly requests them.
+- If Figma was used, hand off the local UI spec and any materialized review
+  evidence together; keep the required handoff usable when the Figma file is
+  unavailable.
 
 ## Boundaries
 
-- No design-system governance, token management, or brand work.
-- No mandatory external design-provider dependency; OpenDesign and Huashu are
-  optional providers selected by the routing rules above.
-- No Figma/Penpot/v0 integration in v1; Huashu is an optional local skill
-  provider, not a design-file integration adapter. Other adapters remain later
-  decisions.
+- No production design-system governance, long-term token ownership, or brand
+  program management. Prototype-level visual direction and temporary tokens are
+  in scope.
+- No mandatory external design-provider dependency. Supported external provider
+  routes are Huashu, OpenDesign, and Figma; provider availability must be
+  checked at runtime and must not block a local handoff.
 - No production code generation; the prototype is throwaway by default.
