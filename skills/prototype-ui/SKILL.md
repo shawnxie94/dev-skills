@@ -96,10 +96,11 @@ When `huashu-design` is selected:
 1. Keep the current repository as the delivery boundary. Treat generated HTML,
    screenshots, exports, and any copied assets as review evidence that must be
    materialized under the repository before handoff.
-2. Read only the Huashu references relevant to the requested output. Use its
-   three-direction exploration for visual-first work, but do not force three
-   directions for a settled flow/state prototype unless the user asks for
-   visual exploration.
+2. Read only the Huashu references relevant to the requested output. Select
+   Huashu only when visual exploration or high-fidelity visual delivery is a
+   material need. Once selected, follow Huashu's provider contract, including
+   its mandatory three-direction gate, unless the user explicitly asks to skip
+   that gate; use `local-static` for an ordinary settled flow/state prototype.
 3. Preserve the screen map, flows, states, and acceptance points from this
    skill. Huashu's visual output does not replace `docs/prototype/ui-spec.md`.
 4. Do not select `huashu-design` and `opendesign` for the same prototype run
