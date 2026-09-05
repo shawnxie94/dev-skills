@@ -130,8 +130,7 @@ related: {}
 | 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态、视觉方向或交互仍是未验证假设，需要在 TRD 前完成设计收口时；内置视觉方向流程，默认本地静态原型，可选 Huashu Design、OpenDesign 或 Figma 作为外部 provider。 | 仓库内可点击 HTML 原型、视觉方向、页面/流程/状态清单、UI 验收点和 TRD 输入。 |
 | 代码库分析（orientation/impact） | `codebase-analysis` | `orientation` 模式：在既有仓库里做设计、计划、调试或实现前需要先理解系统现状（技术栈、运行命令、模块、入口、数据流、风险边界，有索引时由 CodeGraph 支撑）；`impact` 模式：某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。两个模式默认互斥，只在陌生仓库 + 高风险改动时先后组合。 | orientation map 或 impact report（受影响模块、契约、数据/配置影响、兼容风险、测试范围）。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
-| 执行计划 | `write-execution-plan` | 技术方案已经明确，需要拆成可执行步骤、依赖顺序、执行 Actor 和并发方案时。 | 实施 DAG、关键路径、风险优先级、能力/Skill 要求、写入边界、验证节点和 Actor 执行契约。 |
-| 远端交接 | `prepare-remote` | 执行计划已经批准或某个 DAG 节点需要委派给另一台机器、远端 Codex、managed-agent issue、Squad child issue、GitHub Issue 或任务文件时。 | 委派任务包、来源文档引用、依赖关系、能力/Skill 要求、并行边界、写入所有权、验收标准和反馈格式。 |
+| 执行交付（plan/delegate） | `execution-delivery` | `plan` 模式：技术方案已经明确，需要拆成可执行步骤、依赖顺序、执行 Actor 和并发方案；`delegate` 模式：计划已批准或某个 DAG 节点需要委派给另一台机器、远端 Codex、managed-agent issue、Squad child issue、GitHub Issue 或任务文件。 | plan：canonical execution plan（实施 DAG、关键路径、风险优先级、写入边界、验证节点、plan hash）；delegate：有界委派任务包（来源引用、依赖、并行边界、验收标准和反馈格式）。 |
 | 计划实现 | `implement-plan` | 已有执行计划或具体 managed-platform 节点，需要按当前节点实现、验证并推进闭环时。 | 节点级实现记录、TDD/回归/特征/手工验证选择、阶段验证结果和进度更新。 |
 | 发布交付 | `release-delivery` | 已有通过 Quality Gate 的候选版本，需要确定性发现项目 runbook、校验合并/环境审批和备份/回滚证据、部署或回滚时。 | 只读发布计划、候选与证据绑定、runbook 执行约束、smoke/观察记录和 Release Result。 |
 | Bug 修复 | `bug-reproduction` | 用户报告 broken behavior、失败命令、失败页面、失败 API、CI 失败或回归问题时。 | 预期与实际行为、真实入口、最小复现、日志/网络/数据/状态证据、已确认事实和修复方向。 |
@@ -146,7 +145,7 @@ related: {}
 - 轻量调研：`research`（brief）→ `write-prd` 或 `write-trd`。
 - 正式需求分析：`research`（brief，可选）→ `research`（deep）→ `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
 - 多模型交叉估时：`research`（deep）→ 三个或更多 Reviewer 分别运行 `delivery-estimation`（review）→ Research Lead 运行 `delivery-estimation`（synthesis）。
-- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd）→ `write-trd` → `delivery-readiness`（trd_to_plan）→ `write-execution-plan` → `delivery-readiness`（plan_to_build）→ `prepare-remote`（需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。
+- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd）→ `write-trd` → `delivery-readiness`（trd_to_plan）→ `execution-delivery`（plan）→ `delivery-readiness`（plan_to_build）→ `execution-delivery`（delegate，需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。
 
 ## Multi-Agent Orchestration
@@ -159,7 +158,7 @@ related: {}
 - Delivery Actor：按 DAG 节点绑定 `implement-plan` 及节点要求的专项 Skills；收到具体 child issue 后只执行当前节点，不自行认领 sibling issue，也不递归创建 Agent，除非明确拥有编排职责。
 - Release Operator：只绑定 `release-delivery`；从项目 profile 的 `release.yaml` 精确定位 runbook，候选/QG/审批/备份/回滚证据不完整时停止，不自行批准合并或生产发布。
 
-`write-execution-plan` 产出的每个节点应使用平台无关的 Actor 契约，至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。这样同一计划可以交给本地 Agent、Multica managed Agent、Squad child issue 或远端 worker，而不需要重写任务边界。
+`execution-delivery`（plan 模式）产出的每个节点应使用平台无关的 Actor 契约，至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。这样同一计划可以交给本地 Agent、Multica managed Agent、Squad child issue 或远端 worker，而不需要重写任务边界。
 
 ## 与 agent-brain 的任务契约衔接
 
@@ -172,8 +171,8 @@ related: {}
   通过的命令只回报状态/计数，完整 stdout/stderr 留在日志中，失败才回报尾部诊断。
   Context Pack、Experience episode、handoff 和证明流程完整性的文档按需读取，
   不作为每轮默认上下文。
-- `write-execution-plan` 节点应携带 `plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
-- `prepare-remote` 要原样传递这些字段，并明确 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
+- `execution-delivery`（plan 模式）节点应携带 `plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
+- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
 - 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。
 - 状态推进规则：`ready` 只表示依赖满足且可领取；`done` 只表示实现分支完成；只有 Acceptance Pack source hash 匹配且 evidence `overall=pass` 才能进入 `accepted`，下游任务据此 promotion。`skipped` 必须由用户拥有 residual risk，不能自动 promotion。
 - 多 Agent 并发前必须检查规范化后的 `write_ownership`、mutex、branch/worktree 和 base commit；共享 contract/schema/migration/generated artifact 默认单写者。
@@ -184,8 +183,8 @@ related: {}
 
 ```text
 TRD / settled scope
-  → write-execution-plan (DAG + contract linkage)
-  → prepare-remote (bounded packet + source hash)
+  → execution-delivery plan (DAG + contract linkage)
+  → execution-delivery delegate (bounded packet + source hash)
   → agent-brain Task Pack (canonical acceptance + baseline)
   → implement-plan (node-scoped build/verify)
   → acceptance.json + scope evidence

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execution Delivery"
+  short_description: "Execution plans and delegation packets"
+  default_prompt: "Use $execution-delivery plan mode to turn this TRD into an execution plan."

@@ -84,7 +84,7 @@ Use deterministic evidence whenever possible: file/section references, source ha
 ## Handoff rules
 
 - PRD authors run `gate --stage prd_to_trd` before invoking `$write-trd`.
-- TRD authors run `gate --stage trd_to_plan` before invoking `$write-execution-plan`.
+- TRD authors run `gate --stage trd_to_plan` before invoking `$execution-delivery` (plan mode).
 - Plan authors run `gate --stage plan_to_build` before invoking agent-brain or `$implement-plan`.
 - Implementation and release owners use the later gates to prevent unverified work from being treated as complete.
 - A blocked report is a valid output. Return the exact issue IDs, missing evidence, owner, and next action; do not hand off as if the stage passed.

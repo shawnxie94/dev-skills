@@ -1,11 +1,6 @@
----
-name: write-execution-plan
-description: Write an actionable execution plan from a TRD, technical design, or settled implementation scope, including an implementation DAG and optional multi-agent execution plan. Use when the user asks to write an execution plan, implementation plan, task breakdown, development plan, module dependency analysis, DAG, rollout sequence, agent concurrency plan, or uses Chinese requests such as 执行计划, 实施计划, 拆任务, 开发计划, 实施 DAG. Focus on dependency ordering, critical path, risk-first sequencing, validation checkpoints, required capabilities and skills, single-writer boundaries, and bounded execution-actor contracts without writing code.
----
+# Execution Plan (plan mode)
 
-# Write Execution Plan
-
-Use this skill after the TRD or technical direction is clear enough to plan implementation. The goal is to convert design into an executable sequence, not to re-design the system or start coding.
+Mode reference for the `$execution-delivery` skill. Read this file only after the router selects `plan`: converting a clear TRD or technical direction into an executable sequence, not re-designing the system or starting code. Contract identity fields, write-ownership and concurrency rules, and artifact-mode behavior are shared and defined in the router SKILL.md.
 
 ## Core Principles
 
@@ -14,20 +9,13 @@ Use this skill after the TRD or technical direction is clear enough to plan impl
 - Put risky or unknown work early enough to validate assumptions before broad implementation.
 - Keep write ownership clear. Prefer a single writer for shared files, public interfaces, schemas, migrations, and cross-cutting contracts.
 - Assign execution actors only when parallelism reduces time or improves analysis quality without creating merge conflicts or context confusion.
-- Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal.
-- Give every task stable contract linkage: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id` when an outer Task Pack exists, `source_artifacts`, `source_hash`, `acceptance_ids`, and `evidence_required`.
+- Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal, plus the shared contract linkage fields.
 
 ## Implementation Handoff Ownership
 
-This skill owns the canonical execution-plan artifact, its DAG, sequencing,
-write ownership, and plan hash. When the plan will be implemented by
-`agent-brain` or `implement-plan`, materialize it on disk with `status:
-approved`; chat-only prose is not a handoff.
+This mode owns the canonical execution-plan artifact, its DAG, sequencing, write ownership, and plan hash. When the plan will be implemented by `agent-brain` or `$implement-plan`, materialize it on disk with `status: approved`; chat-only prose is not a handoff.
 
-`delivery-readiness` owns the cross-stage `plan_to_build` assessment and report.
-`agent-brain` owns the outer Task Pack, allowed paths, acceptance lifecycle,
-and Task Pack linkage. Do not duplicate those contracts here: emit the shared
-identity fields below and hand off to agent-brain for Task Pack creation.
+`delivery-readiness` owns the cross-stage `plan_to_build` assessment and report. `agent-brain` owns the outer Task Pack, allowed paths, acceptance lifecycle, and Task Pack linkage. Emit the shared identity fields defined in the router and hand off to agent-brain for Task Pack creation; do not duplicate those contracts here.
 
 The canonical artifact is normally `docs/plans/<feature-slug>-execution-plan.md` (or the configured execution-plan path) and includes frontmatter with at least:
 
@@ -51,10 +39,7 @@ git rev-parse HEAD
 shasum -a 256 docs/plans/<feature-slug>-execution-plan.md
 ```
 
-After any plan edit, recompute the plan hash and hand the current artifact to
-`delivery-readiness` and then agent-brain. If the user asked for implementation
-immediately, the current-turn approval may authorize the handoff; otherwise
-stop after writing the approved plan.
+After any plan edit, recompute the plan hash and hand the current artifact to `delivery-readiness` and then agent-brain. If the user asked for implementation immediately, the current-turn approval may authorize the handoff; otherwise stop after writing the approved plan.
 
 ## Inputs to Look For
 
@@ -72,29 +57,11 @@ Extract:
 
 ## Document Artifact Mode
 
-Before producing the execution plan, check `.agent/config.toml`. If it exists,
-use its `[document_artifacts]` section; only when it does not exist should a
-standalone dev-skills workspace fall back to `.dev-skills/config.toml`.
-
-Document artifact mode is enabled when the first available config contains:
-
-```toml
-[document_artifacts]
-enabled = true
-```
+Follow the shared document-artifact rules in the router SKILL.md; plans use `docs/plans/` (or `document_artifacts.paths.execution_plan`) with a stable filename and `id` / `type: execution_plan` / `status` / dates / `sources` / `related` frontmatter, linking source PRD/TRD paths in `related`.
 
 When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Ownership section above still requires a canonical plan artifact.
 
-When document artifact mode is enabled:
-
-- Create or update the execution plan as a managed workspace file instead of only writing it in chat.
-- Use `docs/plans/` by default, or `document_artifacts.paths.execution_plan` when configured.
-- Use a stable, descriptive filename such as `docs/plans/<feature-slug>-execution-plan.md`.
-- Include frontmatter with at least `id`, `type: execution_plan`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
-- Link source PRD/TRD paths in `related` when they exist.
-- Include a `Remote Handoff Inputs` section that identifies which plan nodes can be delegated to a remote Codex and what context, exclusions, verification commands, and acceptance criteria the remote task needs.
-- Keep the final chat response to the file path, status, and concise summary; do not duplicate the full document unless the user asks.
-- If the file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
+Also include a `Remote Handoff Inputs` section identifying which plan nodes can be delegated and what context, exclusions, verification commands, and acceptance criteria the delegate mode will need.
 
 ## Planning Workflow
 
@@ -110,7 +77,7 @@ When document artifact mode is enabled:
    - Mark the critical path.
    - Mark risky nodes that should be validated early.
    - Mark shared-write nodes that should not be implemented concurrently.
-   - If implementation units or dependencies are uncertain, run `change-impact-analysis` before finalizing the DAG.
+   - If implementation units or dependencies are uncertain, run `codebase-analysis` (impact mode) before finalizing the DAG.
 
 4. Choose sequencing.
    - Prefer thin vertical slices when useful.
@@ -123,7 +90,7 @@ When document artifact mode is enabled:
    - Prefer delegated actors for independent read-only analysis, isolated modules, tests, documentation, or clearly bounded implementation.
    - Avoid concurrent writes to the same files, public contracts, database schemas, generated artifacts, or migration paths unless ownership is explicit.
    - Before approving parallel nodes, normalize their pathspecs and reject overlapping write ownership or mutexes; record the result in the plan.
-   - Analyze direct and indirect impact before choosing isolation: read-only tasks may run in parallel without worktrees; disjoint writes may run serially in one checkout; simultaneous writes require isolated worktrees; shared contracts remain serial single-writer tasks.
+   - Assign each node a `parallel_mode` using the shared concurrency rules in the router, after direct and indirect impact analysis.
 
 6. Create per-actor execution contracts when delegation is recommended.
    - Each actor contract must define objective, scope, inputs, required capabilities, required skills, write ownership, forbidden writes, steps, verification, expected output, acceptance criteria, evidence required, and handoff readiness.
@@ -137,10 +104,10 @@ When document artifact mode is enabled:
 
 ## Handoff Rules
 
-- If the plan is approved for delegation to another machine, remote Codex, managed-agent issue, squad child issue, GitHub Issue, or task file, hand off to `prepare-remote`.
-- If the plan is accepted and implementation should begin, hand off to `agent-brain` task mode, which creates the linked Task Pack, and then to `implement-plan`.
+- If the plan is approved for delegation to another machine, remote Codex, managed-agent issue, squad child issue, GitHub Issue, or task file, hand off to this skill's `delegate` mode.
+- If the plan is accepted and implementation should begin, hand off to `agent-brain` task mode, which creates the linked Task Pack, and then to `$implement-plan`.
 - If the plan artifact, hash, approval, or Task Pack linkage is missing, stop and repair the planning handoff before implementation.
-- If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `change-impact-analysis`.
+- If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `codebase-analysis` (impact mode).
 - If the plan is for a refactor, ensure `refactor-plan` has defined behavior protection first.
 
 ## Execution Actor Decision Rules

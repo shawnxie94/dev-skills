@@ -1,6 +1,6 @@
 ---
 name: write-trd
-description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on mature-component reuse before custom development, architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and write-execution-plan inputs without decomposing into detailed tasks or writing code.
+description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD, technical design, technical requirements document, 技术方案, 技术设计文档, or to convert product requirements into implementation-ready technical design inputs. Focus on mature-component reuse before custom development, architecture boundaries, data model, APIs, state flow, security, error handling, observability, compatibility, migration, testing strategy, and execution-plan inputs without decomposing into detailed tasks or writing code.
 ---
 
 # Write TRD
@@ -15,7 +15,7 @@ Use this skill after the PRD or product requirements are clear enough to design 
 - Reuse before building. Prefer existing internal capabilities, managed services, official SDKs/libraries, and mature maintained open-source components. Select custom development only for an explicit self-development requirement; when mature options fail, raise an approval decision instead of defaulting to a new component.
 - Preserve compatibility. Call out existing API, data, config, migration, rollout, and rollback constraints.
 - Design for operation. Include failure handling, observability, security, and testability, not only the happy path.
-- Stop before task planning. Leave step-by-step implementation sequencing to `write-execution-plan`.
+- Stop before task planning. Leave step-by-step implementation sequencing to `$execution-delivery` (plan mode).
 
 ## Inputs to Look For
 
@@ -86,7 +86,7 @@ When document artifact mode is enabled:
 7. Define verification strategy.
    - List unit, integration, e2e, migration, performance, security, or observability checks required by the design.
 
-8. Prepare `write-execution-plan` inputs.
+8. Prepare `$execution-delivery` (plan mode) inputs.
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
    - In document artifact mode, write these sections to the TRD file before the final response.
 
@@ -99,10 +99,10 @@ If affected modules, contracts, data flow, or compatibility risks are unclear, r
 
 ## Handoff Rules
 
-- If the TRD is accepted and implementation sequencing is needed, hand off to `write-execution-plan`.
+- If the TRD is accepted and implementation sequencing is needed, hand off to `$execution-delivery` (plan mode).
 - Before that handoff, use `$delivery-readiness` at `trd_to_plan`; use `loop --repair` only with explicit authorization to change the TRD.
 - If impact scope is unclear, hand off to `codebase-analysis` (impact mode).
-- If the user asks to implement directly, recommend `write-execution-plan` first unless the change is trivial.
+- If the user asks to implement directly, recommend `$execution-delivery` (plan mode) first unless the change is trivial.
 
 ## TRD Checklist
 
