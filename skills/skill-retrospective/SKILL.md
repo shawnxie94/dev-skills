@@ -14,7 +14,7 @@ Use this skill after a real task exposes a problem or improvement opportunity in
 - Separate skill problems from ordinary task difficulty.
 - Prefer trigger, workflow, handoff, output, or validation fixes over broad rewrites.
 - Keep skills lightweight and focused on one reusable workflow.
-- Validate every changed skill with the skill-creator `quick_validate.py` (absolute path below).
+- Validate every changed skill with the skill-creator `quick_validate.py` (resolve the path as below).
 
 ## What To Inspect
 
@@ -62,8 +62,8 @@ rather than silently proceeding without evidence.
 
 5. Validate.
    - Run the skill-creator validator on every changed skill:
-     `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py <skill-dir>`
-   - Prefer the absolute path above. If `$CODEX_HOME` differs, use `$CODEX_HOME/skills/.system/skill-creator/scripts/quick_validate.py`.
+     `python3 <runtime-skills-home>/.system/skill-creator/scripts/quick_validate.py <skill-dir>`
+   - Resolve `<runtime-skills-home>` from the active runtime, first existing path wins: `$CODEX_HOME/skills` (default `~/.codex/skills`), `~/.claude/skills`, `~/.zcode/skills`.
    - This repository does not vendor `quick_validate.py`; do not invent a local path.
    - Search for stale skill names or old handoff references after renames.
    - Report validation results and remaining risk.
@@ -106,7 +106,7 @@ Answer in the user's language unless they request otherwise. Use this structure 
 
 ## Validation
 
-- `python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py <skill-dir>`: <result>
+- `python3 <runtime-skills-home>/.system/skill-creator/scripts/quick_validate.py <skill-dir>`: <result>
 
 ## Remaining Risk
 

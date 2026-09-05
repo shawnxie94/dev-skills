@@ -12,7 +12,7 @@ Use this skill after the PRD or product requirements are clear enough to design 
 - Start from requirements. Do not invent product scope beyond the PRD unless you mark it as an assumption or open question.
 - Design boundaries before internals. Clarify modules, ownership, interfaces, data, and responsibilities before implementation details.
 - Make tradeoffs explicit. Record important alternatives and why the selected approach fits the constraints.
-- Reuse before building. Prefer existing internal capabilities, managed services, official SDKs/libraries, and mature maintained open-source components. Select custom development only for an explicit self-development requirement; when mature options fail, raise an approval decision instead of defaulting to a new component.
+- Reuse before building. `custom` is valid only for an explicit self-development requirement; run the full component assessment in the reuse step below.
 - Preserve compatibility. Call out existing API, data, config, migration, rollout, and rollback constraints.
 - Design for operation. Include failure handling, observability, security, and testability, not only the happy path.
 - Stop before task planning. Leave step-by-step implementation sequencing to `$execution-delivery` (plan mode).

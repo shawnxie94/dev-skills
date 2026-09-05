@@ -14,7 +14,7 @@ Do not use deep mode for a quick background scan or a low-cost reversible decisi
 - Search for counter-evidence and failure cases, not only supporting examples.
 - Trace each material conclusion to evidence and assign explicit confidence.
 - Define functional scope, workflows, system boundaries, integrations, non-functional concerns, and unresolved questions.
-- Prefer mature internal components, managed services, official SDKs/libraries, and maintained open-source components before proposing custom development.
+- Apply the reuse-first rule from the router when comparing technical options; freeze the decision per component in step 4.
 - Produce stable work item IDs for estimation; do not attach person-months, story points, or calendar dates.
 - Record unknowns as research gaps or estimation uncertainty drivers instead of silently guessing.
 

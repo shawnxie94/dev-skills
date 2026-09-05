@@ -10,7 +10,7 @@ The goal is not to produce a final implementation plan; the goal is to expand th
 - Expand the user's thinking. Add relevant technologies, industry patterns, alternatives, risks, constraints, and failure modes the user may not have named.
 - Separate evidence from inference. Clearly distinguish confirmed facts, common practices, plausible inferences, and open questions.
 - Prefer decision-useful synthesis over source dumping. Convert research into options, tradeoffs, evaluation criteria, and next experiments.
-- Prefer mature internal components, managed services, official libraries, and maintained open-source options before proposing custom development. Require an explicit self-development requirement; if mature options have material fit gaps, raise a decision instead of silently recommending a new custom component.
+- Apply the reuse-first rule from the router when comparing options.
 - Keep the depth proportional. Use a light pass for simple questions and a deeper pass for cross-domain, high-cost, or high-risk decisions.
 
 ## Verification Rules
