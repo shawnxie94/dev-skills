@@ -79,7 +79,7 @@ Do not diagnose disagreement from `total_expected` alone; different item-level e
 
 - `calculation_error`: correct the originating estimate, preserving an audit trail.
 - `packet_mismatch`: reject the set and rerun all reviewers on one frozen packet.
-- `scope_gap`: return the packet to `requirement-deep-research`, revise, re-freeze, and rerun all reviewers.
+- `scope_gap`: return the packet to `$research` (deep mode), revise, re-freeze, and rerun all reviewers.
 - `assumption_mismatch`: Research Lead chooses or clarifies an assumption, then requests a focused re-review from all affected reviewers.
 - `reuse_strategy_mismatch`: return to the Requirement & Solution Analyst to freeze the mature component or justified custom-build decision, then rerun all reviewers.
 - `legitimate_uncertainty`: keep the range visible and plan a spike, discovery task, or explicit reserve decision.
@@ -150,7 +150,7 @@ If fewer than three sealed comparable estimates are available, say `synthesis_bl
 
 ## Handoff Rules
 
-- If material scope gaps exist, hand back to `requirement-deep-research` or the Requirement & Solution Analyst.
+- If material scope gaps exist, hand back to `$research` (deep mode) or the Requirement & Solution Analyst.
 - If a risky unknown dominates the range, hand to `write-execution-plan` as a risk-first spike only after solution scope is settled.
 - If the estimate is accepted, use it as a planning input for roadmap, staffing, or execution planning; do not rewrite requirements to fit the number.
 - Preserve unresolved disagreement and confidence in downstream handoff.

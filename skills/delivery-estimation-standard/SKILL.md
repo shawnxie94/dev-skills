@@ -173,5 +173,5 @@ Otherwise, return schema-conformant JSON in chat unless the user requests a file
 
 - Hand sealed independent outputs to the Research Lead using `synthesize-delivery-estimates` only after all reviewers finish their first pass.
 - If packet hash, rubric version, or work item set differs, do not aggregate; request a clean rerun.
-- If `scope_gaps` is non-empty and material, return to `requirement-deep-research` or the Requirement & Solution Analyst to revise the packet.
+- If `scope_gaps` is non-empty and material, return to `$research` (deep mode) or the Requirement & Solution Analyst to revise the packet.
 - Do not average or adjust the estimate to match other reviewers.

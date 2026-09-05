@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research"
+  short_description: "Brief or deep research inputs for ideas and requirements"
+  default_prompt: "Use $research in brief mode to research this idea and identify blind spots."

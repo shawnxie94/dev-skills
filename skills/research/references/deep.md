@@ -1,13 +1,10 @@
----
-name: requirement-deep-research
-description: Conduct formal, multi-source requirement research and produce a decision-ready Requirement Research Packet before PRD, solution design, or delivery estimation. Use when a requirement spans business workflows, system boundaries, integrations, unfamiliar domains, technical options, compliance, or material delivery risk and a lightweight research brief is insufficient, or when the user asks in Chinese for 深度需求调研, 正式需求调研, 需求调研包, 估时输入. Focus on evidence-backed scope, functional points, process flows, system boundaries, technical options, risks, and a frozen estimation input without producing effort numbers.
----
+# Requirement Deep Research (deep mode)
 
-# Requirement Deep Research
+Mode reference for the `$research` skill. Read this file only after the router selects `deep` mode: formal, decision-grade requirement research.
 
-Use this skill for decision-grade requirement research. The output is a traceable Requirement Research Packet that a Requirement & Solution Analyst, PRD/TRD author, or independent estimation reviewers can consume without repeating discovery.
+The output is a traceable Requirement Research Packet that a Requirement & Solution Analyst, PRD/TRD author, or independent estimation reviewers can consume without repeating discovery.
 
-Do not use this skill for a quick background scan or a low-cost reversible decision; use `research-brief` instead. Do not turn the packet into a PRD, final architecture, implementation plan, or delivery estimate.
+Do not use deep mode for a quick background scan or a low-cost reversible decision; use this skill's `brief` mode instead. Do not turn the packet into a PRD, final architecture, implementation plan, or delivery estimate.
 
 ## Core Rules
 
@@ -42,7 +39,7 @@ Collect what exists; mark missing items explicitly:
 - Geographic, regulatory, security, privacy, reliability, and operating constraints.
 - The decision this research must enable: PRD, system option, feasibility gate, or estimation.
 
-If the request is still a raw idea with no identifiable decision or scope, run `research-brief` first.
+If the request is still a raw idea with no identifiable decision or scope, start from this skill's `brief` mode first.
 
 ## Workflow
 
@@ -70,7 +67,7 @@ Cover the relevant dimensions:
 - Use primary sources first: stakeholder artifacts, current system evidence, official docs, standards, regulations, vendor docs, repositories, release notes, and original research.
 - Use high-quality secondary sources to compare practice or find leads; do not use them as the sole support for high-impact claims.
 - Verify volatile claims such as product capabilities, model support, pricing, legal requirements, and project status against current sources.
-- Record every material source in the evidence matrix described in [evidence-matrix.md](references/evidence-matrix.md).
+- Record every material source in the evidence matrix described in [evidence-matrix.md](evidence-matrix.md).
 - Capture contradicting evidence, applicability limits, and unanswered questions.
 
 ### 4. Model the requirement
@@ -101,7 +98,7 @@ Cover the relevant dimensions:
 
 ### 7. Publish the packet
 
-Use [research-packet-template.md](references/research-packet-template.md). Before handoff:
+Use [research-packet-template.md](research-packet-template.md). Before handoff:
 
 - Give the packet a stable `packet_id` and version.
 - Freeze `rubric_version: 2.0`, `unit: person_months`, and `working_days_per_person_month` for all reviewers; default to 20 working days per person-month unless the organization defines another standard.
@@ -132,7 +129,7 @@ Inside the packet file, prefer a scannable main path for estimators (Scope, Exec
 
 ## Evidence Confidence
 
-Use the detailed fields in [evidence-matrix.md](references/evidence-matrix.md). As a shorthand:
+Use the detailed fields in [evidence-matrix.md](evidence-matrix.md). As a shorthand:
 
 - `high`: directly supported by applicable primary evidence or multiple independent strong sources.
 - `medium`: supported but indirect, partially applicable, or dependent on an explicit assumption.
@@ -142,7 +139,7 @@ Confidence describes evidence strength, not how strongly the author prefers a co
 
 ## Output Format
 
-Publish a Requirement Research Packet using [research-packet-template.md](references/research-packet-template.md), with evidence tracked via [evidence-matrix.md](references/evidence-matrix.md).
+Publish a Requirement Research Packet using [research-packet-template.md](research-packet-template.md), with evidence tracked via [evidence-matrix.md](evidence-matrix.md).
 
 The packet must make explicit:
 

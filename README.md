@@ -123,8 +123,7 @@ related: {}
 
 | 场景 | Skill | 时机 | 主要产物 |
 | --- | --- | --- | --- |
-| 想法调研 | `research-brief` | 只有原始想法、技术方向或业界实践不清楚时，用于补充背景、替代方案、盲点和决策输入。 | 调研简报、可选方向、风险盲点、后续 PRD/TRD 输入。 |
-| 深度需求调研 | `requirement-deep-research` | 需求跨业务流程、系统边界、技术选项或外部证据，需要形成可追踪且可供方案与估时复用的正式输入时。 | Requirement Research Packet、证据矩阵、功能/流程/系统边界、冻结估时工作项。 |
+| 调研（brief/deep） | `research` | 想法或需求需要调研输入时。`brief` 模式用于原始想法、技术方向、业界实践、盲点和低成本决策；`deep` 模式用于跨业务流程、系统边界、合规或需要冻结正式输入的深度调研。 | brief：调研简报、可选方向、风险盲点；deep：Requirement Research Packet、证据矩阵、冻结估时工作项。 |
 | 独立交付估时 | `delivery-estimation-standard` | 多个 Reviewer 需要基于完全相同的冻结输入和标准独立估时，并将模型作为主要变量进行交叉验证时。 | 逐工作项人月 O/M/P 与 PERT 估时、成熟组件复用策略、角色总量、P50/P80、假设与机器可校验 JSON。 |
 | 估时综合评审 | `synthesize-delivery-estimates` | Research Lead 需要汇总三份或更多独立估时、定位离散项并形成可信规划区间时。 | 可比性校验、中位数/范围/离散度、复核项、Lead 综合结论与审计链。 |
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
@@ -146,9 +145,9 @@ related: {}
 
 按任务复杂度选择最短可用链路，不要求每次都走完整流程：
 
-- 轻量调研：`research-brief` → `write-prd` 或 `write-trd`。
-- 正式需求分析：`research-brief`（可选）→ `requirement-deep-research` → `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
-- 多模型交叉估时：`requirement-deep-research` → 三个或更多 Reviewer 分别运行 `delivery-estimation-standard` → Research Lead 运行 `synthesize-delivery-estimates`。
+- 轻量调研：`research`（brief）→ `write-prd` 或 `write-trd`。
+- 正式需求分析：`research`（brief，可选）→ `research`（deep）→ `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
+- 多模型交叉估时：`research`（deep）→ 三个或更多 Reviewer 分别运行 `delivery-estimation`（review）→ Research Lead 运行 `delivery-estimation`（synthesis）。
 - 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd）→ `write-trd` → `delivery-readiness`（trd_to_plan）→ `write-execution-plan` → `delivery-readiness`（plan_to_build）→ `prepare-remote`（需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。
 
@@ -156,8 +155,8 @@ related: {}
 
 在 Multica、Squad、managed-agent platform 或其他外部编排器中使用时，建议把 Skill 视为角色能力和执行协议，把任务拆分、状态推进、重试和汇总留给外部编排器：
 
-- Research Lead：绑定 `research-brief` 和 `synthesize-delivery-estimates`，负责研究契约、Reviewer 隔离、差异复核和最终汇总。
-- Requirement & Solution Analyst：绑定 `requirement-deep-research`，必要时串联 `write-prd`、`write-trd`、`codebase-orientation` 和 `change-impact-analysis`。
+- Research Lead：绑定 `research`（brief/synthesis）和 `delivery-estimation`（synthesis），负责研究契约、Reviewer 隔离、差异复核和最终汇总。
+- Requirement & Solution Analyst：绑定 `research`（deep），必要时串联 `write-prd`、`write-trd`、`codebase-analysis`（orientation/impact）。
 - Estimation Reviewer：只绑定 `delivery-estimation-standard`；所有 Reviewer 使用相同冻结输入、指令、Skill 版本和输出格式，首轮不读取其他估时，模型或 runtime 作为主要变量。
 - Delivery Actor：按 DAG 节点绑定 `implement-plan` 及节点要求的专项 Skills；收到具体 child issue 后只执行当前节点，不自行认领 sibling issue，也不递归创建 Agent，除非明确拥有编排职责。
 - Release Operator：只绑定 `release-delivery`；从项目 profile 的 `release.yaml` 精确定位 runbook，候选/QG/审批/备份/回滚证据不完整时停止，不自行批准合并或生产发布。

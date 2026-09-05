@@ -1,11 +1,8 @@
----
-name: research-brief
-description: Turn rough ideas into useful research inputs before requirements analysis or technical design. Use when the user asks to research an idea, explore industry practice, identify blind spots, compare technical directions, understand an unfamiliar domain, collect design inputs, prepare for a product, engineering, agent, platform, or workflow decision, or uses Chinese requests such as 调研, 研究一下, 摸底, 找盲点. Emphasize problem reframing, evidence quality, current-source verification, alternatives, risks, decision criteria, and next-step experiments.
----
+# Research Brief (brief mode)
 
-# Research Brief
+Mode reference for the `$research` skill. Read this file only after the router selects `brief` mode: early ideas, direction exploration, industry practice, blind spots, and low-cost reversible decisions.
 
-Use this skill when the user has an early idea but lacks enough technical, product, or industry context to design confidently. The goal is not to produce a final implementation plan; the goal is to expand the problem space and create high-quality inputs for later requirements analysis, technical design, or execution planning.
+The goal is not to produce a final implementation plan; the goal is to expand the problem space and create high-quality inputs for later requirements analysis, technical design, or execution planning.
 
 ## Core Principles
 
@@ -71,7 +68,7 @@ Use the relevant parts of this checklist:
 
 ## Handoff Rules
 
-- If the question becomes a formal, multi-source requirement investigation with business flows, system boundaries, evidence traceability, or estimation inputs, hand off to `requirement-deep-research`.
+- If the question becomes a formal, multi-source requirement investigation with business flows, system boundaries, evidence traceability, or estimation inputs, escalate to this skill's `deep` mode using the escalation signals in the router.
 - If the idea is ready to become product requirements, hand off to `write-prd`.
 - If the user only needs technical options or architecture inputs, hand off to `write-trd`.
 - If the research exposes a concrete change with unclear blast radius, hand off to `change-impact-analysis`.
