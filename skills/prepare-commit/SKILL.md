@@ -1,6 +1,6 @@
 ---
 name: prepare-commit
-description: Review and prepare pending code changes before commit, merge, or PR creation. Use when the user asks for "review", "review my changes", "pre-commit check", "check before commit", "/review", "整理提交", "提交代码", "帮我 commit", or when Codex is preparing to stage files, create a commit, or publish changes. Focus on scoped diff review, bugs, regressions, API breakage, missing tests, security, performance, maintainability, deployability, observability, commit hygiene, safe staging, concise commit messages, and final worktree state.
+description: Review and prepare pending code changes before commit, merge, or PR creation. Use only when the target is a code diff — the user asks to review pending changes, review the diff or staged files, run a pre-commit check, check before commit, or prepare, organize, stage, or create a commit, e.g. "review my changes", "review the diff", "/review", "pre-commit check", "整理提交", "提交代码", "帮我 commit". Do not use for a bare "review" of designs, documents, plans, PRD/TRD content, or non-code artifacts; use the corresponding skill instead. Focus on scoped diff review, bugs, regressions, API breakage, missing tests, security, performance, maintainability, deployability, observability, commit hygiene, safe staging, concise commit messages, and final worktree state.
 ---
 
 # Prepare Commit
