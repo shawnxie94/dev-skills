@@ -126,7 +126,7 @@ related: {}
 | 调研（brief/deep） | `research` | 想法或需求需要调研输入时。`brief` 模式用于原始想法、技术方向、业界实践、盲点和低成本决策；`deep` 模式用于跨业务流程、系统边界、合规或需要冻结正式输入的深度调研。 | brief：调研简报、可选方向、风险盲点；deep：Requirement Research Packet、证据矩阵、冻结估时工作项。 |
 | 交付估时（review/synthesis） | `delivery-estimation` | `review` 模式：Reviewer 基于完全相同的冻结输入和标准独立产出密封估时，并将模型作为主要变量交叉验证；`synthesis` 模式：Research Lead 汇总三份或更多密封估时、定位离散项并形成可信规划区间。 | review：逐工作项人月 O/M/P 与 PERT 估时、复用策略、P50/P80、机器可校验 JSON；synthesis：可比性校验、中位数/范围/离散度、复核项与共识报告。 |
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
-| 交付就绪评估 | `delivery-readiness` | PRD、TRD、执行计划、实现、验证或发布准备跨阶段交接前，需要循环评估直到 ready 或 blocked 时。 | 阶段门禁、需求/设计/计划追踪、稳定问题 ID、源文件哈希、修复循环和可追溯 readiness report。 |
+| 交付就绪评估 | `delivery-readiness` | 正式跨阶段交接（PRD→TRD→计划→实现→验证→发布）、plan-linked/batch-linked 交付、高风险发布或迁移前的阶段门禁，循环评估直到 ready 或 blocked；非正式小改动不触发。 | 阶段门禁、需求/设计/计划追踪、稳定问题 ID、源文件哈希、修复循环和可追溯 readiness report。 |
 | 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态、视觉方向或交互仍是未验证假设，需要在 TRD 前完成设计收口时；内置视觉方向流程，默认本地静态原型，可选 Huashu Design、OpenDesign 或 Figma 作为外部 provider。 | 仓库内可点击 HTML 原型、视觉方向、页面/流程/状态清单、UI 验收点和 TRD 输入。 |
 | 代码库分析（orientation/impact） | `codebase-analysis` | `orientation` 模式：在既有仓库里做设计、计划、调试或实现前需要先理解系统现状（技术栈、运行命令、模块、入口、数据流、风险边界，有索引时由 CodeGraph 支撑）；`impact` 模式：某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。两个模式默认互斥，只在陌生仓库 + 高风险改动时先后组合。 | orientation map 或 impact report（受影响模块、契约、数据/配置影响、兼容风险、测试范围）。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
@@ -145,7 +145,7 @@ related: {}
 - 轻量调研：`research`（brief）→ `write-prd` 或 `write-trd`。
 - 正式需求分析：`research`（brief，可选）→ `research`（deep）→ `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
 - 多模型交叉估时：`research`（deep）→ 三个或更多 Reviewer 分别运行 `delivery-estimation`（review）→ Research Lead 运行 `delivery-estimation`（synthesis）。
-- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd）→ `write-trd` → `delivery-readiness`（trd_to_plan）→ `execution-delivery`（plan）→ `delivery-readiness`（plan_to_build）→ `execution-delivery`（delegate，需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。
+- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd，正式交接时）→ `write-trd` → `delivery-readiness`（trd_to_plan，正式交接时）→ `execution-delivery`（plan）→ `delivery-readiness`（plan_to_build，进入实现前）→ `execution-delivery`（delegate，需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。readiness 门是显式阶段门，非正式小改动不进 gate。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。
 
 ## Multi-Agent Orchestration

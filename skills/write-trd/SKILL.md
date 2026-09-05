@@ -33,28 +33,9 @@ Extract:
 
 ## Document Artifact Mode
 
-Before producing the TRD, check `.agent/config.toml`. If it exists, use its
-`[document_artifacts]` section; only when it does not exist should a standalone
-dev-skills workspace fall back to `.dev-skills/config.toml`.
+Check `.agent/config.toml` first; only when it does not exist, fall back to `.dev-skills/config.toml`. Document artifact mode is enabled when the first available config contains `[document_artifacts] enabled = true`.
 
-Document artifact mode is enabled when the first available config contains:
-
-```toml
-[document_artifacts]
-enabled = true
-```
-
-When document artifact mode is disabled or the config is absent, keep the normal chat-output behavior.
-
-When document artifact mode is enabled:
-
-- Create or update the TRD as a managed workspace file instead of only writing it in chat.
-- Use `docs/trd/` by default, or `document_artifacts.paths.trd` when configured.
-- Use a stable, descriptive filename such as `docs/trd/<feature-slug>.md`.
-- Include frontmatter with at least `id`, `type: trd`, `status`, `created_at`, `updated_at`, `sources`, and `related`.
-- Link the source PRD path in `related` when one exists.
-- Keep the final chat response to the file path, status, and concise summary; do not duplicate the full document unless the user asks.
-- If the file cannot be written while the mode is enabled, report the blocker instead of falling back to chat-only output.
+When enabled: write the TRD to `docs/trd/<feature-slug>.md` (or `document_artifacts.paths.trd`) with frontmatter `id` / `type: trd` / `status` / `created_at` / `updated_at` / `sources` / `related`, link the source PRD path in `related`, write the execution-plan-input sections into the file before the final response, and keep the chat reply to the file path, status, and concise summary. If the file cannot be written, report the blocker instead of falling back to chat-only output. When disabled or absent, keep normal chat output.
 
 ## TRD Workflow
 
@@ -90,17 +71,17 @@ When document artifact mode is enabled:
    - Summarize implementation slices, sequencing constraints, dependencies, and unresolved decisions without turning them into a full task plan.
    - In document artifact mode, write these sections to the TRD file before the final response.
 
-9. Run the technical handoff gate.
-   - Invoke `$delivery-readiness` with `gate --stage trd_to_plan` after the TRD is complete.
-   - The report must trace material PRD requirements to technical design decisions, contracts, verification, and known risks.
-   - A `blocked` result stops execution planning; do not fill missing architecture, migration, retry, or observability decisions by silently guessing.
+9. Offer the technical handoff gate.
+   - When the TRD feeds a formal cross-stage handoff or the user asks for a readiness check, recommend `$delivery-readiness` with `gate --stage trd_to_plan` and run it when the user confirms.
+   - When the gate runs, the report must trace material PRD requirements to technical design decisions, contracts, verification, and known risks. A `blocked` result stops execution planning; do not fill missing architecture, migration, retry, or observability decisions by silently guessing.
+   - Skip the gate for small features and informal handoffs.
 
 If affected modules, contracts, data flow, or compatibility risks are unclear, run `codebase-analysis` (impact mode) before finalizing the TRD.
 
 ## Handoff Rules
 
 - If the TRD is accepted and implementation sequencing is needed, hand off to `$execution-delivery` (plan mode).
-- Before that handoff, use `$delivery-readiness` at `trd_to_plan`; use `loop --repair` only with explicit authorization to change the TRD.
+- Before a formal handoff, offer `$delivery-readiness` at `trd_to_plan` and run it when the user confirms; use `loop --repair` only with explicit authorization to change the TRD.
 - If impact scope is unclear, hand off to `codebase-analysis` (impact mode).
 - If the user asks to implement directly, recommend `$execution-delivery` (plan mode) first unless the change is trivial.
 
