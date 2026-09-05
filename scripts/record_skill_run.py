@@ -29,7 +29,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
         description="Record one dev-skills run without storing the original prompt or task content."
     )
-    result.add_argument("--skill", required=True, help="Skill name, for example codebase-orientation")
+    result.add_argument("--skill", required=True, help="Skill name, for example codebase-analysis")
     result.add_argument("--status", choices=STATUSES, required=True)
     result.add_argument("--validation", choices=VALIDATIONS, default="not_applicable")
     result.add_argument("--task-type", default="", help="Short category such as bug-fix or planning")

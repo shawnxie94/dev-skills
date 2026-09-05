@@ -67,7 +67,7 @@ Prepare pending changes for commit. Always review the diff first; only stage or 
    - Decide whether the diff should be one commit or multiple commits.
    - Stage only files that belong to the requested commit scope.
    - Never stage unrelated changes. If unrelated changes exist, leave them unstaged and mention them.
-   - If the final diff touches public contracts, schemas, config, permissions, caching, migrations, generated artifacts, or shared modules, run `change-impact-analysis` before staging.
+   - If the final diff touches public contracts, schemas, config, permissions, caching, migrations, generated artifacts, or shared modules, run `codebase-analysis` (impact mode) before staging.
    - Create a concise commit message that describes the completed change.
    - After committing, report the commit hash and final worktree state.
 7. Record the run for the feedback loop.
@@ -165,5 +165,5 @@ When a commit is created, append:
 ## Handoff Rules
 
 - If review finds blocking implementation defects, hand off to `implement-plan`.
-- If review finds broad impact concerns, hand off to `change-impact-analysis`.
+- If review finds broad impact concerns, hand off to `codebase-analysis` (impact mode).
 - If commit succeeds and the worktree is clean, no next skill is required by default.

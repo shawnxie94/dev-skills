@@ -71,7 +71,7 @@ Use the relevant parts of this checklist:
 - If the question becomes a formal, multi-source requirement investigation with business flows, system boundaries, evidence traceability, or estimation inputs, escalate to this skill's `deep` mode using the escalation signals in the router.
 - If the idea is ready to become product requirements, hand off to `write-prd`.
 - If the user only needs technical options or architecture inputs, hand off to `write-trd`.
-- If the research exposes a concrete change with unclear blast radius, hand off to `change-impact-analysis`.
+- If the research exposes a concrete change with unclear blast radius, hand off to `codebase-analysis` (impact mode).
 
 ## Optional Subagent Strategy
 

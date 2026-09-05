@@ -1,11 +1,6 @@
----
-name: codebase-orientation
-description: Build a concise engineering map of an unfamiliar or partially-known repository before planning or changing code. Uses CodeGraph as the relationship and flow backend when a project index exists, with the codegraph CLI and MCP explore tool as the primary retrieval path. Use when the user asks to understand a codebase, orient in a repo, map architecture, identify modules, find entry points, learn how to run or test a project, prepare for PRD/TRD/execution planning against an existing system, assess where a change should be made, or uses Chinese requests such as 了解代码库, 代码库导向, 梳理架构, 找入口, 怎么跑. Query the local .codegraph index first, verify facts from live files and configs, and never treat an index as a substitute for current-file verification.
----
+# Codebase Orientation (orientation mode)
 
-# Codebase Orientation
-
-Use this skill to understand a repository before design, planning, debugging, or implementation. The output should help the next step operate on real code paths instead of guesses.
+Mode reference for the `$codebase-analysis` skill. Read this file only after the router selects `orientation`: building an engineering map of an unfamiliar or partially-known repository before planning or changing code. The output should help the next step operate on real code paths instead of guesses.
 
 ## Required Retrieval Backend: CodeGraph
 
@@ -77,7 +72,7 @@ codegraph init .
 
 6. Produce next-step inputs.
    - Recommend the smallest set of files and commands the next skill should use.
-   - State what context should feed `write-trd`, `write-execution-plan`, `bug-reproduction`, `change-impact-analysis`, or implementation work.
+   - State what context should feed `write-trd`, execution-delivery (plan mode), `bug-reproduction`, codebase-analysis (impact mode), or implementation work.
 
 ## What To Inspect
 
@@ -147,7 +142,7 @@ Answer in the user's language unless they request otherwise. Use this structure 
 
 ## Inputs For Next Step
 
-<Context that should feed write-trd, write-execution-plan, bug reproduction, change-impact-analysis, or implementation>
+<Context that should feed write-trd, execution planning, bug reproduction, impact analysis, or implementation>
 
 ## Open Questions
 

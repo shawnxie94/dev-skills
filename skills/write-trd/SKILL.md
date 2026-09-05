@@ -95,13 +95,13 @@ When document artifact mode is enabled:
    - The report must trace material PRD requirements to technical design decisions, contracts, verification, and known risks.
    - A `blocked` result stops execution planning; do not fill missing architecture, migration, retry, or observability decisions by silently guessing.
 
-If affected modules, contracts, data flow, or compatibility risks are unclear, run `change-impact-analysis` before finalizing the TRD.
+If affected modules, contracts, data flow, or compatibility risks are unclear, run `codebase-analysis` (impact mode) before finalizing the TRD.
 
 ## Handoff Rules
 
 - If the TRD is accepted and implementation sequencing is needed, hand off to `write-execution-plan`.
 - Before that handoff, use `$delivery-readiness` at `trd_to_plan`; use `loop --repair` only with explicit authorization to change the TRD.
-- If impact scope is unclear, hand off to `change-impact-analysis`.
+- If impact scope is unclear, hand off to `codebase-analysis` (impact mode).
 - If the user asks to implement directly, recommend `write-execution-plan` first unless the change is trivial.
 
 ## TRD Checklist

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Analysis"
+  short_description: "Repo orientation and change impact"
+  default_prompt: "Use $codebase-analysis orientation mode to map this repository before planning."

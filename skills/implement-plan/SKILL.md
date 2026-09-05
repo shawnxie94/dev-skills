@@ -226,7 +226,7 @@ If no test is practical, state the manual verification path and residual risk be
 7. Update progress.
    - Mark completed nodes, changed nodes, skipped nodes, and plan deviations, then continue to the next runnable node when continuous batch execution applies.
    - If the plan no longer fits reality, revise the plan before continuing.
-   - If a node affects more files, modules, contracts, schemas, config, permissions, or shared state than expected, pause and run `change-impact-analysis` before continuing.
+   - If a node affects more files, modules, contracts, schemas, config, permissions, or shared state than expected, pause and run `codebase-analysis` (impact mode) before continuing.
 
 8. Finish.
    - Run final relevant validation.
@@ -256,7 +256,7 @@ for future retrospectives.
 
 - If the implementation plan becomes invalid, hand off to `write-execution-plan` to revise sequencing.
 - If the plan artifact or hash is missing/stale, hand off to `write-execution-plan` before any repair or code change.
-- If scope expands or affected contracts are unclear, hand off to `change-impact-analysis`.
+- If scope expands or affected contracts are unclear, hand off to `codebase-analysis` (impact mode).
 - If implementation completes, hand off to `prepare-commit`.
 
 ## Output Format

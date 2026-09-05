@@ -1,11 +1,6 @@
----
-name: change-impact-analysis
-description: Analyze the blast radius of a proposed change, current diff, refactor, API change, schema change, config change, dependency change, or bug fix before design, planning, implementation, or commit. Use when the user asks what a change affects, whether a change is safe, which modules or callers are impacted, what tests are needed, when another skill finds unclear affected modules, contracts, data flow, compatibility, shared state, migrations, permissions, caching, or config, or uses Chinese requests such as 影响面, 改动范围, 影响分析, 会不会影响. Focus on direct and indirect impact, contracts, data, config, tests, compatibility risks, scope boundaries, and next-step inputs.
----
+# Change Impact (impact mode)
 
-# Change Impact Analysis
-
-Use this skill to understand the impact of a concrete change before designing, planning, implementing, refactoring, or committing it. The goal is to expose affected modules, contracts, tests, and risks so later work does not miss hidden dependencies.
+Mode reference for the `$codebase-analysis` skill. Read this file only after the router selects `impact`: understanding what a concrete change affects before designing, planning, implementing, refactoring, or committing it. The goal is to expose affected modules, contracts, tests, and risks so later work does not miss hidden dependencies.
 
 ## Core Principles
 
@@ -25,6 +20,8 @@ Use the relevant context:
 - API contracts, request/response shapes, schemas, migrations, config keys, env vars, feature flags.
 - Data flow, cache keys, permissions, state transitions, generated artifacts, external integrations.
 - Existing tests, fixtures, e2e flows, CI checks, and manual validation paths.
+
+On an indexed project, use `codegraph impact <symbol>` and `codegraph affected <files...>` as the first retrieval pass, then verify the results against live files.
 
 ## Analysis Workflow
 
@@ -52,7 +49,7 @@ Use the relevant context:
 ## Handoff Rules
 
 - If the impact requires design changes, hand off to `write-trd`.
-- If the impact changes task ordering or dependencies, hand off to `write-execution-plan`.
+- If the impact changes task ordering or dependencies, hand off to `execution-delivery` (plan mode).
 - If the impact is refactor-specific, hand off to `refactor-plan`.
 - If the impact is discovered during implementation, hand off back to `implement-plan` with updated scope.
 - If the impact is discovered before commit, hand off back to `prepare-commit` with validation recommendations.
@@ -94,7 +91,7 @@ Answer in the user's language unless they request otherwise. Use this structure 
 
 ## Inputs For Next Step
 
-<What to pass to write-trd, write-execution-plan, refactor-plan, implement-plan, prepare-commit, or bug-reproduction>
+<What to pass to write-trd, execution planning, refactor-plan, implement-plan, prepare-commit, or bug-reproduction>
 ```
 
 For small changes, compress the output while preserving direct impact, indirect impact, validation, and risks.

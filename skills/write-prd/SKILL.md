@@ -91,7 +91,7 @@ When document artifact mode is enabled:
 
 - If technical design is requested after the PRD, hand off to `write-trd`.
 - Before that handoff, use `$delivery-readiness` at `prd_to_trd`; use `loop --repair` only when the user explicitly asks to repair the PRD until ready.
-- If affected modules, data, contracts, or compatibility risks are unclear, hand off to `change-impact-analysis`.
+- If affected modules, data, contracts, or compatibility risks are unclear, hand off to `codebase-analysis` (impact mode).
 - If the user asks to implement immediately, recommend `write-trd` and `write-execution-plan` first unless the change is trivial.
 
 ## Output Format

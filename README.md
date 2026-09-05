@@ -80,7 +80,7 @@ decision = "decisions"
 
 ```bash
 python3 scripts/record_skill_run.py \
-  --skill codebase-orientation \
+  --skill codebase-analysis \
   --status completed \
   --validation pass \
   --task-type orientation \
@@ -119,7 +119,7 @@ related: {}
 
 ## Skills
 
-建议按照研发流程从上到下选择 skill。专项场景可以按需插入，例如遇到 bug 先走 `bug-reproduction`，做重构先走 `refactor-plan`，涉及影响面不清楚时插入 `change-impact-analysis`。
+建议按照研发流程从上到下选择 skill。专项场景可以按需插入，例如遇到 bug 先走 `bug-reproduction`，做重构先走 `refactor-plan`，涉及影响面不清楚时插入 `codebase-analysis`（impact 模式）。
 
 | 场景 | Skill | 时机 | 主要产物 |
 | --- | --- | --- | --- |
@@ -128,8 +128,7 @@ related: {}
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
 | 交付就绪评估 | `delivery-readiness` | PRD、TRD、执行计划、实现、验证或发布准备跨阶段交接前，需要循环评估直到 ready 或 blocked 时。 | 阶段门禁、需求/设计/计划追踪、稳定问题 ID、源文件哈希、修复循环和可追溯 readiness report。 |
 | 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态、视觉方向或交互仍是未验证假设，需要在 TRD 前完成设计收口时；内置视觉方向流程，默认本地静态原型，可选 Huashu Design、OpenDesign 或 Figma 作为外部 provider。 | 仓库内可点击 HTML 原型、视觉方向、页面/流程/状态清单、UI 验收点和 TRD 输入。 |
-| 代码库导向 | `codebase-orientation` | 在既有仓库里做设计、计划、调试或实现前，需要先理解系统现状时。 | 技术栈、运行验证命令、模块职责、入口路径、数据流、依赖集成、测试方式和风险边界。 |
-| 影响面分析 | `change-impact-analysis` | 某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。 | 受影响模块、接口契约、数据/配置影响、兼容风险、测试范围和后续 skill handoff。 |
+| 代码库分析（orientation/impact） | `codebase-analysis` | `orientation` 模式：在既有仓库里做设计、计划、调试或实现前需要先理解系统现状（技术栈、运行命令、模块、入口、数据流、风险边界，有索引时由 CodeGraph 支撑）；`impact` 模式：某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。两个模式默认互斥，只在陌生仓库 + 高风险改动时先后组合。 | orientation map 或 impact report（受影响模块、契约、数据/配置影响、兼容风险、测试范围）。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
 | 执行计划 | `write-execution-plan` | 技术方案已经明确，需要拆成可执行步骤、依赖顺序、执行 Actor 和并发方案时。 | 实施 DAG、关键路径、风险优先级、能力/Skill 要求、写入边界、验证节点和 Actor 执行契约。 |
 | 远端交接 | `prepare-remote` | 执行计划已经批准或某个 DAG 节点需要委派给另一台机器、远端 Codex、managed-agent issue、Squad child issue、GitHub Issue 或任务文件时。 | 委派任务包、来源文档引用、依赖关系、能力/Skill 要求、并行边界、写入所有权、验收标准和反馈格式。 |

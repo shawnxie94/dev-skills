@@ -38,12 +38,12 @@ Check the areas touched by the refactor:
 - Runtime and deployability: environment differences, feature flags, deploy order, rollback path.
 - Tests and observability: coverage gaps, brittle tests, logs, metrics, and diagnosability.
 
-Before refactoring shared interfaces, data models, module boundaries, generated artifacts, or widely used utilities, run `change-impact-analysis`.
+Before refactoring shared interfaces, data models, module boundaries, generated artifacts, or widely used utilities, run `codebase-analysis` (impact mode) first unless the blast radius is already clear from the refactor plan itself.
 
 ## Handoff Rules
 
 - If the refactor plan is accepted and should be implemented, hand off to `implement-plan`.
-- If the refactor touches broad callers or shared contracts, hand off to `change-impact-analysis`.
+- If the refactor touches broad callers or shared contracts, hand off to `codebase-analysis` (impact mode).
 - After implementation, hand off to `prepare-commit`.
 
 ## Planning Workflow

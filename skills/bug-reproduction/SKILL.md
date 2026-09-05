@@ -34,7 +34,7 @@ Use the relevant sources for the bug:
 
 2. Locate the likely entry point.
    - Use codebase files and commands to find the page, API, command, job, or test involved.
-   - If the repository is unfamiliar, run a quick `codebase-orientation` style pass first.
+   - If the repository is unfamiliar, run a quick `codebase-analysis` (orientation) pass first.
 
 3. Build a minimal reproduction path.
    - Prefer an existing failing test or the shortest command/user flow that triggers the issue.
@@ -53,7 +53,7 @@ Use the relevant sources for the bug:
 
 6. Decide next action.
    - If reproduced, summarize likely fix direction and the evidence supporting it.
-   - If the reproduced bug suggests a broad contract, data-flow, cache, permission, or config issue, run `change-impact-analysis` before fixing.
+   - If the reproduced bug suggests a broad contract, data-flow, cache, permission, or config issue, run `codebase-analysis` (impact mode) before fixing.
    - If not reproduced, explain what was tried, what was ruled out, and what information is still needed.
    - Only proceed to code changes if the user asked for a fix or the task clearly includes fixing.
 
@@ -61,7 +61,7 @@ Use the relevant sources for the bug:
 
 - If the bug is reproduced and the fix is straightforward, hand off to `implement-plan`.
 - If the fix requires structural change, hand off to `refactor-plan`.
-- If the blast radius is unclear, hand off to `change-impact-analysis`.
+- If the blast radius is unclear, hand off to `codebase-analysis` (impact mode).
 
 ## Output Format
 

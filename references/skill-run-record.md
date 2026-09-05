@@ -4,7 +4,7 @@
 
 ```bash
 python3 <dev-skills>/scripts/record_skill_run.py \
-  --skill codebase-orientation \
+  --skill codebase-analysis \
   --status completed \
   --validation pass \
   --task-type orientation \
