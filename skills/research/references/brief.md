@@ -75,7 +75,7 @@ Use the relevant parts of this checklist:
 
 ## Optional Subagent Strategy
 
-If an external squad, managed-agent platform, issue workflow, or lead has already assigned the research scope, execute that scope directly. Do not recursively create subagents or redistribute work unless the assignment explicitly grants orchestration responsibility.
+If an external squad, managed-agent platform, issue workflow, or lead has already assigned the research scope, execute that scope directly. Do not recursively create subagents or redistribute work unless the assignment explicitly grants orchestration responsibility. When you run as the main agent on a direct user request, the request itself grants orchestration responsibility; the restriction above applies when you are already an assigned executor.
 
 Use subagents only when the research scope is broad enough to benefit from parallel independent passes. Keep prompts minimal and avoid giving subagents your expected answer.
 

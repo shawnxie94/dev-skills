@@ -4,6 +4,8 @@ Mode reference for the `$delivery-estimation` skill. Read this file only after t
 
 Every reviewer must receive the same frozen input, rubric version, prompt contract, and output schema. The intended experimental variable is the reviewer model or runtime, not the evaluation standard.
 
+If the runtime cannot vary the model across subagents (for example, ZCode subagents share the calling model), keep the independence that is still achievable: one reviewer per fresh session, sealed first passes, and no shared context between reviewers. Record the reviewer identity and runtime so the Lead can see that the model-variance variable was not exercised.
+
 This mode produces one estimate. It does not compare reviewers, negotiate a consensus, or read another reviewer's numbers during the first pass.
 
 ## Independence Protocol

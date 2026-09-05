@@ -128,6 +128,8 @@ Avoid delegation when:
 
 When in doubt, delegate analysis and keep shared code-writing with one explicitly assigned actor.
 
+Never delegate work that requires runtime-reserved tooling. Browser control, desktop control, and visual acceptance gates are main-agent-only in runtimes such as ZCode — a delegated actor cannot load or use them. Assign such nodes to the local lead and mark the required capability accordingly.
+
 ## Output Format
 
 Answer in the user's language unless they request otherwise. Use this structure when practical:

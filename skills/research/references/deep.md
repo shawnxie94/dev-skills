@@ -27,7 +27,7 @@ When an external squad, managed-agent platform, issue workflow, or Research Lead
 - Preserve the external task's source links, output path, scope, exclusions, and acceptance criteria.
 - Report evidence gaps and blocked questions to the orchestrator instead of expanding scope unilaterally.
 
-When no external orchestration exists, parallel research passes are optional only for genuinely broad, separable domains. The lead agent remains responsible for source verification, conflict resolution, and the final packet.
+When no external orchestration exists, parallel research passes are optional only for genuinely broad, separable domains. The lead agent remains responsible for source verification, conflict resolution, and the final packet. When you run as the main agent on a direct user request, the request itself grants orchestration responsibility; the restrictions above apply when you are executing as an assigned, delegated actor.
 
 ## Required Inputs
 

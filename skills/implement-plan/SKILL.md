@@ -58,6 +58,8 @@ When an execution-plan node, agent-brain Task Pack unit, delegate-mode task pack
 - Respect the assignment's scope, dependencies, required skills, write ownership, forbidden writes, status, and feedback format.
 - Report newly discovered dependencies or scope gaps to the orchestrating agent instead of expanding the node unilaterally.
 
+Orchestration responsibility is perspective-dependent. When you run as the main agent on a direct user request, the request itself grants orchestration responsibility and you decide subagent delegation yourself; the restrictions above apply when you are executing as an assigned, delegated actor.
+
 ## Context And Output Budget
 
 Keep the active turn to the smallest useful projection:
@@ -165,6 +167,7 @@ If no test is practical, state the manual verification path and residual risk be
    - When the execution plan includes subagent plans and subagent tools are available, the main agent may launch subagents for the approved current node.
    - Pass only the scoped inputs, exclusions, expected output format, and acceptance criteria from the plan.
    - Do not leak expected answers, hidden assumptions, or unrelated repository context into subagent prompts.
+   - Never delegate nodes that require runtime-reserved tooling such as browser control, desktop control, or visual acceptance gates; perform those verifications as the main agent.
    - Inspect the subagent's scope, claims, and artifacts before applying them.
    - Avoid merging conflicting edits to shared files, public contracts, schemas, migrations, or generated artifacts without explicit ownership.
    - After merging, immediately run the relevant node-level verification.
