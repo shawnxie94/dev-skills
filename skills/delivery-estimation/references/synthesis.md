@@ -1,11 +1,8 @@
----
-name: synthesize-delivery-estimates
-description: Compare three or more sealed person-month delivery estimates produced independently from the same frozen requirement packet and shared rubric. Use when a Research Lead must validate unit and mature-component strategy consistency, calculate per-work-item medians and ranges, detect material divergence, identify likely assumption or scope causes, produce a consensus review report, or uses Chinese requests such as 综合估时, 估时评审, 估时汇总, 离散度分析. Do not create a fourth estimate or silently average incompatible inputs.
----
+# Synthesize Delivery Estimates (synthesis mode)
 
-# Synthesize Delivery Estimates
+Mode reference for the `$delivery-estimation` skill. Read this file only after the router selects `synthesis` mode: a Research Lead comparing sealed estimates.
 
-Use this skill only after three or more Estimation Reviewers have completed sealed first-pass outputs using `delivery-estimation-standard`. The Research Lead evaluates consistency, divergence, assumptions, and confidence; the lead does not produce another independent estimate.
+Use this mode only after three or more Estimation Reviewers have completed sealed first-pass outputs using `$delivery-estimation` in `review` mode. The Research Lead evaluates consistency, divergence, assumptions, and confidence; the lead does not produce another independent estimate.
 
 ## Core Rules
 
@@ -32,10 +29,10 @@ Reject comparison when reviewer IDs are duplicated, hashes, rubric versions, per
 
 ### 1. Validate each estimate
 
-Run the validator from `delivery-estimation-standard` against each file:
+Run the `$delivery-estimation` review-mode validator against each file:
 
 ```bash
-python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <estimate.json>
+python3 <skill-dir>/scripts/validate_estimate.py <estimate.json>
 ```
 
 Do not aggregate invalid estimates. Ask the originating reviewer to correct arithmetic or schema errors without seeing the other reviewers' estimates.
@@ -45,13 +42,13 @@ Do not aggregate invalid estimates. Ask the originating reviewer to correct arit
 Run:
 
 ```bash
-python3 <synthesize-delivery-estimates-skill-dir>/scripts/aggregate_estimates.py estimate-a.json estimate-b.json estimate-c.json --output comparison.json
+python3 <skill-dir>/scripts/aggregate_estimates.py estimate-a.json estimate-b.json estimate-c.json --output comparison.json
 ```
 
 The default divergence threshold is 30%. Override it only when the Research Lead records a reason:
 
 ```bash
-python3 <synthesize-delivery-estimates-skill-dir>/scripts/aggregate_estimates.py estimate-*.json --threshold 25
+python3 <skill-dir>/scripts/aggregate_estimates.py estimate-*.json --threshold 25
 ```
 
 For each work item and total metric, the script reports reviewer values, median, minimum, maximum, and:
@@ -87,7 +84,7 @@ Do not diagnose disagreement from `total_expected` alone; different item-level e
 
 ### 5. Produce the lead report
 
-Use [consensus-report-template.md](references/consensus-report-template.md). The report must include:
+Use [consensus-report-template.md](consensus-report-template.md). The report must include:
 
 - Comparability checks and reviewer/model matrix.
 - Work-item medians, ranges, divergence, and flagged items.
@@ -103,7 +100,7 @@ A planning range is a Lead decision based on the reviewed evidence. Label it as 
 Produce:
 
 1. Machine comparison data for the independent estimates.
-2. A Research Lead consensus report using [consensus-report-template.md](references/consensus-report-template.md).
+2. A Research Lead consensus report using [consensus-report-template.md](consensus-report-template.md).
 
 The report must include:
 
@@ -116,14 +113,7 @@ The report must include:
 
 ## Document Artifact Mode
 
-If `.agent/config.toml` exists, use its `[document_artifacts]` section. Only
-when it does not exist should standalone dev-skills read
-`.dev-skills/config.toml`. When enabled, write machine comparison JSON and the
-Lead report to `docs/estimates/` or `document_artifacts.paths.delivery_estimates`
-when configured. Suggested names:
-
-- `docs/estimates/<packet-id>-comparison.json`
-- `docs/estimates/<packet-id>-consensus.md`
+Follow the shared document-artifact rules in the router SKILL.md. When enabled, use the stable names `docs/estimates/<packet-id>-comparison.json` and `docs/estimates/<packet-id>-consensus.md`.
 
 Otherwise, return the concise report in chat and preserve comparison JSON when the user requests an artifact.
 
@@ -151,6 +141,6 @@ If fewer than three sealed comparable estimates are available, say `synthesis_bl
 ## Handoff Rules
 
 - If material scope gaps exist, hand back to `$research` (deep mode) or the Requirement & Solution Analyst.
-- If a risky unknown dominates the range, hand to `write-execution-plan` as a risk-first spike only after solution scope is settled.
+- If a risky unknown dominates the range, hand to `execution-delivery` (plan mode) as a risk-first spike only after solution scope is settled.
 - If the estimate is accepted, use it as a planning input for roadmap, staffing, or execution planning; do not rewrite requirements to fit the number.
 - Preserve unresolved disagreement and confidence in downstream handoff.

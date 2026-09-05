@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a delivery-estimation-standard JSON result."""
+"""Validate a delivery-estimation review-mode JSON result."""
 
 from __future__ import annotations
 

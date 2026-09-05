@@ -1,13 +1,10 @@
----
-name: delivery-estimation-standard
-description: Independently estimate a frozen delivery scope in person-months using a shared work-item rubric, optimistic/most-likely/pessimistic values, PERT expected effort, mature-component reuse assumptions, role totals, schedule assumptions, uncertainty, and machine-validatable JSON. Use when one or more Estimation Reviewers must assess the same Requirement Research Packet or settled scope, especially across different models for cross-validation, or when the user asks in Chinese for 独立估时, 人月估算, 交付估时, 交叉估时. Enforce identical inputs and rules, first-pass independence, stable work item IDs, explicit assumptions, reuse-before-custom-build decisions, and reproducible output; do not synthesize other reviewers' estimates.
----
+# Delivery Estimation Review (review mode)
 
-# Delivery Estimation Standard
+Mode reference for the `$delivery-estimation` skill. Read this file only after the router selects `review` mode: one independent Estimation Reviewer producing one sealed estimate.
 
-Use this skill for each independent Estimation Reviewer. Every reviewer must receive the same frozen input, rubric version, prompt contract, and output schema. The intended experimental variable is the reviewer model or runtime, not the evaluation standard.
+Every reviewer must receive the same frozen input, rubric version, prompt contract, and output schema. The intended experimental variable is the reviewer model or runtime, not the evaluation standard.
 
-This skill produces one estimate. It does not compare reviewers, negotiate a consensus, or read another reviewer's numbers during the first pass.
+This mode produces one estimate. It does not compare reviewers, negotiate a consensus, or read another reviewer's numbers during the first pass.
 
 ## Independence Protocol
 
@@ -113,17 +110,17 @@ Check for:
 
 ### 6. Emit and validate JSON
 
-Follow [estimation-output-schema.md](references/estimation-output-schema.md). Save the result, then run:
+Follow [estimation-output-schema.md](estimation-output-schema.md). Save the result, then run:
 
 ```bash
-python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <estimate.json>
+python3 <skill-dir>/scripts/validate_estimate.py <estimate.json>
 ```
 
 Resolve the script path relative to this Skill directory. Resolve all validation errors before handing the estimate to the Research Lead.
 
 ## Output Format
 
-Emit machine-validatable estimate JSON that conforms to [estimation-output-schema.md](references/estimation-output-schema.md).
+Emit machine-validatable estimate JSON that conforms to [estimation-output-schema.md](estimation-output-schema.md).
 
 Required shape at minimum:
 
@@ -134,7 +131,7 @@ Required shape at minimum:
 Validate before handoff:
 
 ```bash
-python3 <delivery-estimation-standard-skill-dir>/scripts/validate_estimate.py <estimate.json>
+python3 <skill-dir>/scripts/validate_estimate.py <estimate.json>
 ```
 
 ## Publish Layering (Multica / issue threads)
@@ -158,12 +155,7 @@ Per-item optimistic/most-likely/pessimistic values, assumption lists, and role a
 
 ## Document Artifact Mode
 
-If `.agent/config.toml` exists, use its `[document_artifacts]` section. Only
-when it does not exist should standalone dev-skills read
-`.dev-skills/config.toml`. When enabled, write the estimate to
-`docs/estimates/` or `document_artifacts.paths.delivery_estimates` when
-configured. Use a stable name such as
-`docs/estimates/<packet-id>-<reviewer-id>.json`.
+Follow the shared document-artifact rules in the router SKILL.md. When enabled, use a stable name such as `docs/estimates/<packet-id>-<reviewer-id>.json`.
 
 On Multica / managed-issue runs, attach the estimate JSON as the SoT artifact and keep the thread comment to the Decision Card.
 
@@ -171,7 +163,7 @@ Otherwise, return schema-conformant JSON in chat unless the user requests a file
 
 ## Handoff Rules
 
-- Hand sealed independent outputs to the Research Lead using `synthesize-delivery-estimates` only after all reviewers finish their first pass.
+- Hand sealed independent outputs to the Research Lead using `$delivery-estimation` in `synthesis` mode only after all reviewers finish their first pass.
 - If packet hash, rubric version, or work item set differs, do not aggregate; request a clean rerun.
 - If `scope_gaps` is non-empty and material, return to `$research` (deep mode) or the Requirement & Solution Analyst to revise the packet.
 - Do not average or adjust the estimate to match other reviewers.

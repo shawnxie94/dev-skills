@@ -167,8 +167,8 @@ Otherwise, return the packet in chat unless the user requests a file. Prefer a f
 
 - Hand a complete packet to `write-prd` when product scope and acceptance intent are ready.
 - Hand technical direction and system constraints to `write-trd` when architecture decisions are needed.
-- Hand a frozen, estimation-ready packet to independent reviewers using `delivery-estimation-standard`.
-- If the research reveals an existing-system blast radius that is still unclear, run `codebase-orientation` and then `change-impact-analysis`.
+- Hand a frozen, estimation-ready packet to independent reviewers using `$delivery-estimation` (review mode, one reviewer per run).
+- If the research reveals an existing-system blast radius that is still unclear, run `codebase-analysis` (orientation, then impact in a separate step).
 - Do not call the packet estimation-ready while blocking scope decisions, missing work items, or unverified critical constraints remain.
 
 ## Completion Checklist

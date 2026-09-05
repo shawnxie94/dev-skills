@@ -124,8 +124,7 @@ related: {}
 | 场景 | Skill | 时机 | 主要产物 |
 | --- | --- | --- | --- |
 | 调研（brief/deep） | `research` | 想法或需求需要调研输入时。`brief` 模式用于原始想法、技术方向、业界实践、盲点和低成本决策；`deep` 模式用于跨业务流程、系统边界、合规或需要冻结正式输入的深度调研。 | brief：调研简报、可选方向、风险盲点；deep：Requirement Research Packet、证据矩阵、冻结估时工作项。 |
-| 独立交付估时 | `delivery-estimation-standard` | 多个 Reviewer 需要基于完全相同的冻结输入和标准独立估时，并将模型作为主要变量进行交叉验证时。 | 逐工作项人月 O/M/P 与 PERT 估时、成熟组件复用策略、角色总量、P50/P80、假设与机器可校验 JSON。 |
-| 估时综合评审 | `synthesize-delivery-estimates` | Research Lead 需要汇总三份或更多独立估时、定位离散项并形成可信规划区间时。 | 可比性校验、中位数/范围/离散度、复核项、Lead 综合结论与审计链。 |
+| 交付估时（review/synthesis） | `delivery-estimation` | `review` 模式：Reviewer 基于完全相同的冻结输入和标准独立产出密封估时，并将模型作为主要变量交叉验证；`synthesis` 模式：Research Lead 汇总三份或更多密封估时、定位离散项并形成可信规划区间。 | review：逐工作项人月 O/M/P 与 PERT 估时、复用策略、P50/P80、机器可校验 JSON；synthesis：可比性校验、中位数/范围/离散度、复核项与共识报告。 |
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
 | 交付就绪评估 | `delivery-readiness` | PRD、TRD、执行计划、实现、验证或发布准备跨阶段交接前，需要循环评估直到 ready 或 blocked 时。 | 阶段门禁、需求/设计/计划追踪、稳定问题 ID、源文件哈希、修复循环和可追溯 readiness report。 |
 | 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态、视觉方向或交互仍是未验证假设，需要在 TRD 前完成设计收口时；内置视觉方向流程，默认本地静态原型，可选 Huashu Design、OpenDesign 或 Figma 作为外部 provider。 | 仓库内可点击 HTML 原型、视觉方向、页面/流程/状态清单、UI 验收点和 TRD 输入。 |
@@ -155,9 +154,9 @@ related: {}
 
 在 Multica、Squad、managed-agent platform 或其他外部编排器中使用时，建议把 Skill 视为角色能力和执行协议，把任务拆分、状态推进、重试和汇总留给外部编排器：
 
-- Research Lead：绑定 `research`（brief/synthesis）和 `delivery-estimation`（synthesis），负责研究契约、Reviewer 隔离、差异复核和最终汇总。
+- Research Lead：绑定 `research`（brief）和 `delivery-estimation`（synthesis），负责研究契约、Reviewer 隔离、差异复核和最终汇总。
 - Requirement & Solution Analyst：绑定 `research`（deep），必要时串联 `write-prd`、`write-trd`、`codebase-analysis`（orientation/impact）。
-- Estimation Reviewer：只绑定 `delivery-estimation-standard`；所有 Reviewer 使用相同冻结输入、指令、Skill 版本和输出格式，首轮不读取其他估时，模型或 runtime 作为主要变量。
+- Estimation Reviewer：只绑定 `delivery-estimation`（review 模式）；所有 Reviewer 使用相同冻结输入、指令、Skill 版本和输出格式，首轮不读取其他估时也不读取 synthesis 逻辑，模型或 runtime 作为主要变量。
 - Delivery Actor：按 DAG 节点绑定 `implement-plan` 及节点要求的专项 Skills；收到具体 child issue 后只执行当前节点，不自行认领 sibling issue，也不递归创建 Agent，除非明确拥有编排职责。
 - Release Operator：只绑定 `release-delivery`；从项目 profile 的 `release.yaml` 精确定位 runbook，候选/QG/审批/备份/回滚证据不完整时停止，不自行批准合并或生产发布。
 

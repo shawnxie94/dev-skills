@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Estimation"
+  short_description: "Sealed person-month estimates and lead synthesis"
+  default_prompt: "Use $delivery-estimation in review mode to estimate this frozen packet."
