@@ -170,6 +170,11 @@ related: {}
 
 - `agent-brain` 的 Task Pack 是外部合同，负责目标、范围、`allowed_paths`、canonical acceptance、基线和最终 Done 门。
 - `dev-skills` 是内部研发能力，负责调研、设计、计划、交接、实现和提交前检查；Skill 不另造一套 acceptance 真相。
+- 默认采用短输出策略：模型先读当前节点和最小相关证据，按
+  `git diff --name-only` → `git diff --stat` → 必要时完整 diff 的顺序探索；
+  通过的命令只回报状态/计数，完整 stdout/stderr 留在日志中，失败才回报尾部诊断。
+  Context Pack、Experience episode、handoff 和证明流程完整性的文档按需读取，
+  不作为每轮默认上下文。
 - `write-execution-plan` 节点应携带 `plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
 - `prepare-remote` 要原样传递这些字段，并明确 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
 - 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。

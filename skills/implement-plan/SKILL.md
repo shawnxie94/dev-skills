@@ -82,12 +82,30 @@ When this skill is invoked in a repository without an explicit plan, assigned ma
    - If multiple runnable tasks conflict, execute them serially in dependency or merge order.
 6. Before editing code, validate each selected task packet.
    - Require status to be `ready` or clearly approved for execution.
-   - Read all `Required Context`, `sources`, and `related` artifacts that exist.
+   - Read the task packet and its required context fully. Read only the
+     source/related artifact sections that the current node, acceptance check,
+     or unresolved decision actually needs; open the complete artifact only
+     when a contract or hash validation requires it.
    - Confirm the assigned actor has the task's `required_capabilities` and `required_skills`; otherwise report the mismatch instead of silently omitting the required workflow.
    - Respect `depends_on`; if an unmet dependency is obvious, stop and report the blocker.
    - Treat `write_ownership` as the allowed edit scope and `forbidden_writes` as hard exclusions unless the user explicitly overrides them.
    - Use the task packet's branch/worktree fields when present.
 7. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
+
+### Context And Output Budget
+
+Keep the active turn to the smallest useful projection:
+
+- Start with task scope, current node, changed-file names/stat, and the next
+  verification target.
+- Use `git diff --name-only` then `git diff --stat`; read the full diff only
+  for the affected files or when a check is disputed.
+- Passing commands contribute status and counts only. Keep stdout/stderr in
+  the command or acceptance log; surface a bounded failure tail when action
+  is needed.
+- Do not repeat fresh acceptance, Context Pack, or handoff evidence merely to
+  restamp a node. Re-open the durable artifact only when its hash, scope, or
+  result is stale or inconsistent.
 
 ### Agent-brain Contract Bridge
 

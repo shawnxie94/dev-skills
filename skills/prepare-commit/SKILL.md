@@ -31,7 +31,9 @@ Prepare pending changes for commit. Always review the diff first; only stage or 
    - Extract a short business context from the task, PR, commit message, branch, or surrounding docs: intended behavior, behavior that must remain unchanged, and affected users/APIs/data/deployments. Use it to focus the review; do not invent missing requirements.
 
 3. Read the diff.
-   - Use `git diff` for unstaged changes and `git diff --cached` for staged changes.
+   - Use `git diff --name-only` and `git diff --stat` as the default inventory,
+     then use `git diff` or `git diff --cached` only for the included files and
+     review units that need inspection.
    - Read surrounding code when needed with `sed`, `rg`, or direct file inspection.
    - Do not review unrelated pre-existing issues unless the diff makes them newly reachable or worse.
    - Follow the selected review units. For large diffs, prioritize high-risk units first, then cover ordinary units; do not stop after the high-risk pass and claim full coverage.
@@ -51,6 +53,9 @@ Prepare pending changes for commit. Always review the diff first; only stage or 
    - Infer likely test commands from project configuration when the command is obvious.
    - Do not turn a review into a long full-suite CI investigation unless the user asked for it or the risk justifies it.
    - If checks are not run, say so and explain the residual risk.
+   - Keep passing test stdout/stderr out of the review response; report the
+     command, status, counts, and a bounded failure tail only. Preserve full
+     output in the test/CI log when available.
    - Keep review coverage and verification status separate: a complete diff review does not mean tests passed, and passing tests does not mean the diff was fully reviewed.
    - Classify the final state explicitly:
      - `complete`: every intended file/unit was reviewed; verification may still be `passed`, `not run`, or `failed`.
