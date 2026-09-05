@@ -31,6 +31,9 @@ TARGET="${DEV_SKILLS_TARGET:-codex}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 ZCODE_HOME="${ZCODE_HOME:-$HOME/.zcode}"
+ZCODE_CONFIG="$ZCODE_HOME/cli/config.json"
+CODEGRAPH_HOOK_SOURCE="$REPO_DIR/scripts/codegraph-zcode-prompt-hook.py"
+CODEGRAPH_HOOK_FILE="$ZCODE_HOME/hooks/codegraph-zcode-prompt-hook.py"
 SKILLS_DST=""
 CODEGRAPH_TARGET=""
 
@@ -82,8 +85,8 @@ case "$TARGET" in
     ;;
   zcode)
     SKILLS_DST="$ZCODE_HOME/skills"
-    # codegraph has no ZCode integration yet; the binary is still ensured,
-    # but MCP configuration must be done manually.
+    # codegraph MCP auto-config does not support ZCode yet; the UserPromptSubmit
+    # context hook is wired by this script instead (configure_codegraph_zcode_hook).
     CODEGRAPH_TARGET=""
     ;;
   *)
@@ -190,7 +193,63 @@ ensure_codegraph() {
     info "configuring CodeGraph for $TARGET"
     run "$CODEGRAPH_BIN" install --target="$CODEGRAPH_TARGET" --yes
   elif [ -z "$CODEGRAPH_TARGET" ]; then
-    note "codegraph MCP auto-config unavailable for $TARGET; configure manually if needed"
+    note "codegraph MCP auto-config unavailable for $TARGET (context hook is wired separately); configure MCP manually if needed"
+  fi
+}
+
+configure_codegraph_zcode_hook() {
+  # ZCode supports the same UserPromptSubmit contract as Claude Code, but
+  # codegraph's installer does not target it yet and `codegraph prompt-hook`
+  # emits plain text where ZCode requires JSON. This installs an adapter that
+  # repacks the context, then registers a managed hook in cli/config.json.
+  if [ "$TARGET" != "zcode" ]; then
+    return 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "codegraph zcode hook skipped: python3 is required"
+    return 1
+  fi
+  if [ "$DRY_RUN" = 0 ] && [ -z "$CODEGRAPH_BIN" ]; then
+    warn "codegraph zcode hook skipped: codegraph binary unavailable"
+    return 1
+  fi
+  local codegraph_bin="${CODEGRAPH_BIN:-$HOME/.local/bin/codegraph}"
+
+  if [ "$DRY_RUN" = 1 ]; then
+    note "would install codegraph hook adapter: $CODEGRAPH_HOOK_FILE"
+    python3 "$REPO_DIR/scripts/codegraph_zcode_config.py" install \
+      --config-file "$ZCODE_CONFIG" \
+      --hook-script "$CODEGRAPH_HOOK_FILE" \
+      --codegraph-bin "$codegraph_bin" \
+      --python-bin "$(command -v python3)" \
+      --dry-run
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$CODEGRAPH_HOOK_FILE")"
+  cp "$CODEGRAPH_HOOK_SOURCE" "$CODEGRAPH_HOOK_FILE"
+  chmod 755 "$CODEGRAPH_HOOK_FILE"
+  python3 "$REPO_DIR/scripts/codegraph_zcode_config.py" install \
+    --config-file "$ZCODE_CONFIG" \
+    --hook-script "$CODEGRAPH_HOOK_FILE" \
+    --codegraph-bin "$codegraph_bin" \
+    --python-bin "$(command -v python3)"
+  ok "configured codegraph zcode hook: $ZCODE_CONFIG"
+}
+
+remove_codegraph_zcode_hook() {
+  if [ "$TARGET" != "zcode" ]; then
+    return 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    return 0
+  fi
+  python3 "$REPO_DIR/scripts/codegraph_zcode_config.py" uninstall \
+    --config-file "$ZCODE_CONFIG" \
+    --hook-script "$CODEGRAPH_HOOK_FILE"
+  if [ -f "$CODEGRAPH_HOOK_FILE" ]; then
+    run rm -f "$CODEGRAPH_HOOK_FILE"
+    ok "removed codegraph hook adapter: $CODEGRAPH_HOOK_FILE"
   fi
 }
 
@@ -303,6 +362,16 @@ do_uninstall() {
 }
 
 case "$ACTION" in
-  install)   ensure_codegraph; printf "\n"; do_install ;;
-  uninstall) do_uninstall ;;
+  install)
+    ensure_codegraph
+    printf "\n"
+    configure_codegraph_zcode_hook || warn "codegraph zcode hook setup incomplete (install continues)"
+    printf "\n"
+    do_install
+    ;;
+  uninstall)
+    do_uninstall
+    printf "\n"
+    remove_codegraph_zcode_hook
+    ;;
 esac
