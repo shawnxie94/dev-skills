@@ -22,6 +22,18 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
 - Treat node-level validation as an internal checkpoint. Do not stop for user confirmation after every accepted node when the user requested the full plan or feature batch.
 
+## Light Mode
+
+Use light mode when all of these hold:
+
+- No agent-brain Task Pack and no execution-plan unit is linked to the request.
+- The change is already specified by the user and touches at most a couple of files.
+- No shared contract, schema, migration, generated artifact, or permission boundary is affected.
+
+In light mode: skip Mandatory Plan Preflight and Remote Task Bootstrap; read the relevant code; pick the lightest Behavior Protection Mode; implement; validate the change; then hand off to `prepare-commit`. Keep the output compressed to implemented work, verification, and residual risk.
+
+Escape upward immediately when any of the following appears: shared contracts or schemas are affected, more files than expected change, an outer Task Pack or plan linkage turns out to exist, or the user asks for plan-linked execution. Escalate to the full preflight path before continuing.
+
 ## Mandatory Plan Preflight
 
 Before reading a ready task as runnable or editing any file, require an approved canonical execution plan for every plan-linked or delegated implementation task. The plan may be supplied directly by the user, by `$execution-delivery` (plan mode), or by a remote task packet, but it must be a file on disk rather than chat-only prose. The Light Mode section below is the only escape.
