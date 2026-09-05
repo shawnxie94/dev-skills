@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implement an approved execution plan or remote handoff task one verified step at a time. Use when the user asks to implement, execute, carry out, or continue from an approved execution plan, implementation DAG, task plan, subagent plan, or tasks/ready remote task packet, or uses Chinese requests such as 按计划实现, 开始落地, 实现任务包, 继续实现. When invoked in a repository without an explicit plan, check the workspace ready-task directory, resolve dependencies and write conflicts, and execute only runnable tasks. For small, single-file, already-specified changes with no Task Pack or plan unit, use the light mode instead of the plan preflight. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, task write-ownership enforcement, branch/worktree isolation for concurrent tasks, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
+description: Implement an approved execution plan one verified step at a time, delegating node work to subagents of the current agent. Use when the user asks to implement, execute, carry out, or continue from an approved execution plan, implementation DAG, task plan, or delegated node assignment, or uses Chinese requests such as 按计划实现, 开始落地, 继续实现. For small, single-file, already-specified changes with no Task Pack or plan unit, use the light mode instead of the plan preflight. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, node write-ownership enforcement, subagent delegation with merge review, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
 ---
 
 # Implement Plan
@@ -16,7 +16,7 @@ Use this skill to execute an approved implementation plan without drifting from 
 - Validate after each meaningful step, not only at the end.
 - Treat subagent output as candidate work that the main agent must review, merge, and verify.
 - Scaffolded code is not implemented. Distinguish "scaffolded" from "verified" in every completion claim and name the end-to-end chain that was actually exercised.
-- Enforce remote task `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
+- Enforce the assigned node's `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
 - When agent-brain is present, treat its Task Pack as the outer contract and the selected dev-skill as the inner execution capability.
 - Never run multiple coding tasks concurrently in the same worktree or on the same branch.
 - Use `prepare-commit` as the final quality gate, not as a substitute for node-level validation.
@@ -30,13 +30,13 @@ Use light mode when all of these hold:
 - The change is already specified by the user and touches at most a couple of files.
 - No shared contract, schema, migration, generated artifact, or permission boundary is affected.
 
-In light mode: skip Mandatory Plan Preflight and Remote Task Bootstrap; read the relevant code; pick the lightest Behavior Protection Mode; implement; validate the change; then hand off to `prepare-commit`. Keep the output compressed to implemented work, verification, and residual risk.
+In light mode: skip Mandatory Plan Preflight and read the relevant code; pick the lightest Behavior Protection Mode; implement; validate the change; then hand off to `prepare-commit`. Keep the output compressed to implemented work, verification, and residual risk.
 
 Escape upward immediately when any of the following appears: shared contracts or schemas are affected, more files than expected change, an outer Task Pack or plan linkage turns out to exist, or the user asks for plan-linked execution. Escalate to the full preflight path before continuing.
 
 ## Mandatory Plan Preflight
 
-Before reading a ready task as runnable or editing any file, require an approved canonical execution plan for every plan-linked or delegated implementation task. The plan may be supplied directly by the user, by `$execution-delivery` (plan mode), or by a remote task packet, but it must be a file on disk rather than chat-only prose. The Light Mode section below is the only escape.
+Before editing any file, require an approved canonical execution plan for every plan-linked or delegated implementation task. The plan may be supplied directly by the user or by `$execution-delivery` (plan-mode artifact or delegate-mode packet), but it must be a file on disk rather than chat-only prose. The Light Mode section above is the only escape.
 
 For an agent-brain Task Pack, verify all of these values before Build:
 
@@ -48,63 +48,17 @@ For an agent-brain Task Pack, verify all of these values before Build:
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
 
-## Managed Task Boundary
+## Assigned Node Boundary
 
-When a managed-agent platform, squad child issue, concrete GitHub Issue, task packet, or implementation DAG node is already assigned, treat it as the current-node context:
+When an execution-plan node, agent-brain Task Pack unit, delegate-mode task packet, or subagent assignment is already defined, treat it as the current-node context:
 
 - Execute only that assigned node and its explicit verification contract.
-- Do not scan for, claim, promote, or execute sibling ready tasks.
+- Do not scan for, claim, promote, or execute sibling nodes.
 - Do not recursively delegate work unless the assignment explicitly grants orchestration responsibility.
-- Respect the platform's scope, dependencies, required skills, write ownership, forbidden writes, status, and feedback format.
-- Report newly discovered dependencies or scope gaps to the external orchestrator instead of expanding the node unilaterally.
+- Respect the assignment's scope, dependencies, required skills, write ownership, forbidden writes, status, and feedback format.
+- Report newly discovered dependencies or scope gaps to the orchestrating agent instead of expanding the node unilaterally.
 
-Use Remote Task Bootstrap only when no explicit assigned plan, issue, task packet, or current-node context exists.
-
-## Remote Task Bootstrap
-
-When this skill is invoked in a repository without an explicit plan, assigned managed-platform issue, task path, or current-node context:
-
-1. Check `.agent/config.toml`; only when it does not exist should a standalone
-   dev-skills workspace fall back to `.dev-skills/config.toml`.
-   - If `document_artifacts.paths.task_ready` is configured, use that as the ready-task directory.
-   - Otherwise use `tasks/ready/`.
-2. Look for ready remote task packets in that directory.
-   - If exactly one task exists, read it and treat it as the source plan.
-   - If multiple ready tasks exist, read all of them, resolve dependencies, detect write conflicts, and build a runnable set before deciding execution.
-   - If no ready task exists, continue normal input confirmation and ask for a plan or task.
-3. Resolve dependencies.
-   - Treat `parallel_group` and `feature` as the task group boundary for one requirement or feature.
-   - A task is runnable only when every `depends_on` item is already accepted, merged, or explicitly marked satisfied.
-   - Treat `done` as "implementation branch completed", not as dependency satisfaction, unless the task or repo policy explicitly says done is integrated.
-   - If a dependency is not present locally and is not explicitly marked satisfied, treat it as unresolved.
-   - If a `ready` task has unmet dependencies, do not execute it; report that it should be moved back to draft/blocked or wait for the dependency.
-4. Detect conflicts and mutual exclusion.
-   - Treat overlapping `write_ownership` entries as a conflict unless the plan explicitly assigns non-overlapping subpaths.
-   - Treat matching `mutex` values as a conflict.
-   - Treat public contracts, schemas, migrations, generated artifacts, dependency manifests, lockfiles, and shared config as serial unless single-writer ownership is explicit.
-5. Analyze impact and choose execution mode.
-   - Classify each task as read-only, serial-write, or concurrent-write before creating branches or worktrees.
-   - Trace direct and indirect impact: callers, shared contracts, generated artifacts, test fixtures, config, lockfiles, and runtime state; path disjointness alone is insufficient.
-   - Read-only analysis may run in parallel in the same checkout when no task writes files.
-   - Independent code tasks may reuse one checkout only when the orchestrator serializes their writes; never let two agents write the same checkout simultaneously.
-   - Require a dedicated branch and worktree only for genuinely simultaneous write tasks, or when the impact analysis cannot prove safe serialization.
-   - If exactly one runnable task remains, execute it in the current worktree only if the worktree is clean and the branch matches the task or can be safely created.
-   - If multiple runnable tasks remain and subagents are available, use read-only parallelism or isolated worktrees according to the impact result.
-   - If separate worktrees are unavailable, keep code writes serial; read-only analysis can still run in parallel.
-   - If multiple runnable tasks conflict, execute them serially in dependency or merge order.
-6. Before editing code, validate each selected task packet.
-   - Require status to be `ready` or clearly approved for execution.
-   - Read the task packet and its required context fully. Read only the
-     source/related artifact sections that the current node, acceptance check,
-     or unresolved decision actually needs; open the complete artifact only
-     when a contract or hash validation requires it.
-   - Confirm the assigned actor has the task's `required_capabilities` and `required_skills`; otherwise report the mismatch instead of silently omitting the required workflow.
-   - Respect `depends_on`; if an unmet dependency is obvious, stop and report the blocker.
-   - Treat `write_ownership` as the allowed edit scope and `forbidden_writes` as hard exclusions unless the user explicitly overrides them.
-   - Use the task packet's branch/worktree fields when present.
-7. Use the task packet's `Verification`, `Acceptance Criteria`, `Blocking Conditions`, and `Delivery And Feedback` sections as the implementation contract.
-
-### Context And Output Budget
+## Context And Output Budget
 
 Keep the active turn to the smallest useful projection:
 
@@ -119,7 +73,7 @@ Keep the active turn to the smallest useful projection:
   restamp a node. Re-open the durable artifact only when its hash, scope, or
   result is stale or inconsistent.
 
-### Agent-brain Contract Bridge
+## Agent-brain Contract Bridge
 
 When agent-brain is present, it owns the outer Task Pack, allowed paths,
 acceptance lifecycle, and final scope result. This skill owns only the current
@@ -132,7 +86,7 @@ below for node execution.
 
 ## Parallelism And Worktree Decision
 
-Use this decision order:
+Use this decision order, matching the shared `parallel_mode` contract in `$execution-delivery`:
 
 1. Satisfy dependencies and run impact analysis.
 2. If every selected actor is read-only, run them in parallel in the same checkout.
@@ -140,7 +94,7 @@ Use this decision order:
 4. If actors must write simultaneously, require non-overlapping ownership, non-overlapping mutexes, dedicated branches, and dedicated worktrees.
 5. If impact is unclear or shared state is involved, keep the work serial and assign one writer.
 
-For every mode, each actor receives only its task packet, required context, exclusions, verification commands, and expected feedback format.
+Each subagent receives only its node contract, required context, exclusions, verification commands, and expected feedback format.
 
 Recommended isolation pattern:
 
@@ -158,29 +112,13 @@ main worktree
 
 Do not let two agents edit the same checkout simultaneously. Merge isolated results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
 
-## Task Group Progression
-
-### Continuous batch execution
+## Batch Progression
 
 - The implementation batch is the user's approved goal or the plan phase (for example, Phase A U1–U8), not one `plan_unit_id`.
 - After a node passes its required verification, immediately resolve dependencies and execute the next runnable node in the same batch.
 - Keep one active host goal for the batch; update progress internally without replacing it with a new per-node user task.
 - Return to the user only after the batch-level acceptance passes, or when a genuine blocker is reached: missing/conflicting requirements, unavailable external capability, required human/device action, irreversible external mutation, or exhausted repair/escalation gate.
 - A node's `done` state satisfies a dependency checkpoint but does not satisfy the user's overall request.
-
-For multiple tasks from the same requirement:
-
-- Use `parallel_group` or `feature` to identify the group.
-- Keep only currently runnable tasks in `tasks/ready/`.
-- Keep approved but dependency-blocked tasks in `tasks/blocked/` when available, otherwise keep them in draft with `status: blocked`.
-- Do not execute blocked tasks even if they are part of the same feature group.
-- After a task finishes implementation, mark it `done` or report it as done, but do not automatically satisfy dependencies unless the task is accepted, merged, or explicitly approved as satisfying its dependents.
-- After a dependency is accepted or merged, scan blocked tasks in the same feature group:
-  - Promote tasks whose `depends_on` entries are all satisfied.
-  - Keep tasks blocked when any dependency remains unresolved.
-  - Run conflict and mutex checks again before executing newly promoted tasks.
-- When downstream tasks depend on upstream code, prefer creating or rebasing their worktrees from the updated base branch after the upstream merge. Avoid stacked branches unless the task packet explicitly requires them.
-- Use a final integration task when multiple branches complete one feature; it should verify the merged result rather than add broad new scope.
 
 ## Long-Running Work
 
@@ -206,8 +144,8 @@ If no test is practical, state the manual verification path and residual risk be
 
 1. Confirm inputs.
    - Identify the source plan, current node, scope, expected behavior, verification mode, and done criteria.
-   - If no explicit input is provided, run the remote task bootstrap before asking for more context.
-   - If no approved canonical plan exists, stop and route to `$execution-delivery` (plan mode); light mode (below) applies only to a single-file, already-specified change with no Task Pack plan unit.
+   - If no explicit input is provided, ask for the plan or node assignment before starting.
+   - If no approved canonical plan exists, stop and route to `$execution-delivery` (plan mode); light mode (above) applies only to a single-file, already-specified change with no Task Pack plan unit.
 
 2. Prepare verification.
    - Write or identify the focused test/check/manual validation for the node.
@@ -288,9 +226,9 @@ Answer in the user's language unless they request otherwise. Use concise progres
 
 - <Deviation and why it was necessary, or "None">
 
-## Task Group Updates
+## Batch Updates
 
-- <Dependency satisfied, downstream tasks promoted/blocked, or "None">
+- <Dependency satisfied or blocked for the batch, or "None">
 
 ## Subagent Merge Notes
 
