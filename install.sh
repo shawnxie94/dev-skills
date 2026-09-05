@@ -4,7 +4,8 @@
 # Usage:
 #   ./install.sh                 install for Codex (idempotent, default)
 #   ./install.sh --target claude install for Claude Code
-#   ./install.sh --uninstall     remove dev-skills symlinks only
+#   ./install.sh --target zcode  install for ZCode
+#   ./install.sh --uninstall     remove dev-skills symlinks (including stale ones)
 #   ./install.sh --dry-run       show what would change, change nothing
 #   ./install.sh -h | --help     show this help
 #
@@ -12,6 +13,7 @@
 #   DEV_SKILLS_TARGET  default target (codex)
 #   CODEX_HOME         target Codex home (default: $HOME/.codex)
 #   CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
+#   ZCODE_HOME         target ZCode home (default: $HOME/.zcode)
 set -euo pipefail
 
 # ---------- locate this script (works through symlinks) ----------
@@ -28,6 +30,7 @@ SKILLS_SRC="$REPO_DIR/skills"
 TARGET="${DEV_SKILLS_TARGET:-codex}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+ZCODE_HOME="${ZCODE_HOME:-$HOME/.zcode}"
 SKILLS_DST=""
 CODEGRAPH_TARGET=""
 
@@ -41,7 +44,8 @@ install.sh — symlink dev-skills/* into a local agent runtime
 Usage:
   ./install.sh                 install for Codex (idempotent, default)
   ./install.sh --target claude install for Claude Code
-  ./install.sh --uninstall     remove dev-skills symlinks only
+  ./install.sh --target zcode  install for ZCode
+  ./install.sh --uninstall     remove dev-skills symlinks (including stale ones)
   ./install.sh --dry-run       show what would change, change nothing
   ./install.sh -h | --help     show this help
 
@@ -49,6 +53,7 @@ Env:
   DEV_SKILLS_TARGET  default target (codex)
   CODEX_HOME         target Codex home (default: $HOME/.codex)
   CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
+  ZCODE_HOME         target ZCode home (default: $HOME/.zcode)
 EOF
 }
 while [ $# -gt 0 ]; do
@@ -56,7 +61,7 @@ while [ $# -gt 0 ]; do
     -u|--uninstall) ACTION="uninstall"; shift ;;
     -n|--dry-run)   DRY_RUN=1; shift ;;
     --target)
-      [ $# -ge 2 ] || { echo "install.sh: --target requires codex or claude" >&2; exit 2; }
+      [ $# -ge 2 ] || { echo "install.sh: --target requires codex, claude, or zcode" >&2; exit 2; }
       TARGET="$2"
       shift 2
       ;;
@@ -75,8 +80,14 @@ case "$TARGET" in
     SKILLS_DST="$CLAUDE_HOME/skills"
     CODEGRAPH_TARGET="claude"
     ;;
+  zcode)
+    SKILLS_DST="$ZCODE_HOME/skills"
+    # codegraph has no ZCode integration yet; the binary is still ensured,
+    # but MCP configuration must be done manually.
+    CODEGRAPH_TARGET=""
+    ;;
   *)
-    echo "install.sh: unsupported target '$TARGET' (expected codex or claude)" >&2
+    echo "install.sh: unsupported target '$TARGET' (expected codex, claude, or zcode)" >&2
     exit 2
     ;;
 esac
@@ -175,9 +186,11 @@ ensure_codegraph() {
   fi
   ok "codegraph ready: $($CODEGRAPH_BIN --version)"
 
-  if [ "${CODEGRAPH_CONFIGURE:-${CODEGRAPH_CONFIGURE_CODEX:-1}}" = 1 ]; then
+  if [ "${CODEGRAPH_CONFIGURE:-${CODEGRAPH_CONFIGURE_CODEX:-1}}" = 1 ] && [ -n "$CODEGRAPH_TARGET" ]; then
     info "configuring CodeGraph for $TARGET"
     run "$CODEGRAPH_BIN" install --target="$CODEGRAPH_TARGET" --yes
+  elif [ -z "$CODEGRAPH_TARGET" ]; then
+    note "codegraph MCP auto-config unavailable for $TARGET; configure manually if needed"
   fi
 }
 
@@ -263,6 +276,27 @@ do_uninstall() {
     ok "removed $name (was -> $cur)"
     removed=$((removed+1))
   done
+
+  # Prune stale dev-skills links: symlinks still pointing into this repo's
+  # skills/ directory for skills that no longer exist there.
+  if [ -d "$SKILLS_DST" ]; then
+    for link in "$SKILLS_DST"/*; do
+      [ -L "$link" ] || continue
+      name="${link##*/}"
+      case "$name" in .*) continue ;; esac
+      if printf '%s\n' "${SKILLS[@]}" | grep -qxF "$name"; then
+        continue
+      fi
+      raw="$(readlink "$link" 2>/dev/null || true)"
+      case "$raw" in
+        "$SKILLS_SRC"|"$SKILLS_SRC"/*)
+          run rm "$link"
+          ok "removed stale $name (was -> $raw)"
+          removed=$((removed+1))
+          ;;
+      esac
+    done
+  fi
 
   printf "\n"
   printf "summary: removed=%d skipped=%d\n" "$removed" "$skipped"

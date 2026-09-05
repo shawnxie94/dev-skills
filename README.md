@@ -193,14 +193,15 @@ TRD / settled scope
 
 ## Installation
 
-仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到选定 runtime 的 Skill 目录：默认是 `~/.codex/skills/`，使用 `--target claude` 时是 `~/.claude/skills/`（可分别用 `CODEX_HOME` / `CLAUDE_HOME` 覆盖）。安装时会检测 `codegraph` 是否可用，缺失时通过官方 macOS/Linux 安装脚本或 `npm install -g @colbymchenry/codegraph` 安装，并为选定 runtime 执行对应的 CodeGraph 配置。可设置 `CODEGRAPH_CONFIGURE=0` 跳过配置写入。
+仓库根目录提供了幂等的安装/卸载脚本，会把 `skills/` 下每个子目录软链到选定 runtime 的 Skill 目录：默认是 `~/.codex/skills/`，使用 `--target claude` 时是 `~/.claude/skills/`，使用 `--target zcode` 时是 `~/.zcode/skills/`（可分别用 `CODEX_HOME` / `CLAUDE_HOME` / `ZCODE_HOME` 覆盖）。安装时会检测 `codegraph` 是否可用，缺失时通过官方 macOS/Linux 安装脚本或 `npm install -g @colbymchenry/codegraph` 安装，并为选定 runtime 执行对应的 CodeGraph 配置（zcode 暂无 codegraph 集成，只检查二进制，不写 MCP 配置）。可设置 `CODEGRAPH_CONFIGURE=0` 跳过配置写入。卸载时会同时清掉仍指向本仓库 `skills/` 但已不存在的旧 skill 死链。
 
 ```bash
 cd /path/to/dev-skills
 ./install.sh              # 安装到 Codex（已存在则跳过，重复运行安全）
 ./install.sh --target claude # 安装到 Claude Code
+./install.sh --target zcode  # 安装到 ZCode
 ./install.sh --dry-run    # 仅打印计划，不改磁盘
-./install.sh --uninstall  # 卸载（只移除 dev-skills 自己的软链）
+./install.sh --uninstall  # 卸载（移除 dev-skills 软链，含旧 skill 死链）
 ./uninstall.sh --target claude # 卸载 Claude Code 的软链
 ```
 
