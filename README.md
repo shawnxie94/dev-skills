@@ -130,8 +130,8 @@ related: {}
 | 原型/UI 规格 | `prototype-ui` | PRD 已定型但布局、流程、状态、视觉方向或交互仍是未验证假设，需要在 TRD 前完成设计收口时；内置视觉方向流程，默认本地静态原型，可选 Huashu Design、OpenDesign 或 Figma 作为外部 provider。 | 仓库内可点击 HTML 原型、视觉方向、页面/流程/状态清单、UI 验收点和 TRD 输入。 |
 | 代码库分析（orientation/deep-dive/impact） | `codebase-analysis` | `orientation` 模式：在既有仓库里做设计、计划、调试或实现前需要先理解系统现状（技术栈、运行命令、模块、入口、数据流、风险边界，有索引时由 CodeGraph 支撑）；`deep-dive` 模式：需要研究级深读——核心 loop、执行 harness、模块设计、设计思想——并沉淀为持久学习笔记时；`impact` 模式：某个改动、接口、数据结构、配置、依赖或重构的影响范围不清楚时。三个模式默认互斥，只在陌生仓库需要时先 orientation 再 deep-dive/impact 分步组合。 | orientation map、深度解读笔记（写入用户学习笔记目录，如 `~/Developer/learn/notes/`，并登记其 INDEX）或 impact report（受影响模块、契约、数据/配置影响、兼容风险、测试范围）。 |
 | TRD 沉淀 | `write-trd` | 已有 PRD、明确产品需求或确定 feature scope，需要转成技术方案时。 | 架构边界、接口契约、数据模型、状态流转、安全、可观测性、兼容迁移、测试策略和执行计划输入。 |
-| 执行交付（plan/delegate） | `execution-delivery` | `plan` 模式：技术方案已经明确，需要拆成可执行步骤、依赖顺序、执行 Actor 和并发方案；`delegate` 模式：计划已批准或某个 DAG 节点需要委派给另一台机器、远端 Codex、managed-agent issue、Squad child issue、GitHub Issue 或任务文件。 | plan：canonical execution plan（实施 DAG、关键路径、风险优先级、写入边界、验证节点、plan hash）；delegate：有界委派任务包（来源引用、依赖、并行边界、验收标准和反馈格式）。 |
-| 计划实现 | `implement-plan` | 已有执行计划或具体 managed-platform 节点，需要按当前节点实现、验证并推进闭环时。 | 节点级实现记录、TDD/回归/特征/手工验证选择、阶段验证结果和进度更新。 |
+| 执行交付（plan/delegate） | `execution-delivery` | `plan` 模式：先评估并行收益并由用户选择 `batch` 或 `parallel_dag`，再生成对应计划；`delegate` 模式：计划批准后由用户选择当前会话或子智能体执行。 | plan：整体执行计划或并行 DAG（写入边界、验收、plan hash）；delegate：当前会话路由或有界子智能体任务包（来源引用、依赖、并行边界、验收和反馈格式）。 |
+| 计划实现 | `implement-plan` | 已有整体执行计划、并行 DAG 节点或委派任务，需要按已确定的执行策略实现和验证时。 | `batch`：完整 goal 的实现与内部验证；`parallel_dag`：节点级实现和验收证据；不自行改变执行策略。 |
 | 发布交付 | `release-delivery` | 已有通过 Quality Gate 的候选版本，需要确定性发现项目 runbook、校验合并/环境审批和备份/回滚证据、部署或回滚时。 | 只读发布计划、候选与证据绑定、runbook 执行约束、smoke/观察记录和 Release Result。 |
 | Bug 修复 | `bug-reproduction` | 用户报告 broken behavior、失败命令、失败页面、失败 API、CI 失败或回归问题时。 | 预期与实际行为、真实入口、最小复现、日志/网络/数据/状态证据、已确认事实和修复方向。 |
 | 重构 | `refactor-plan` | 需要重组代码、简化结构、解耦、抽取模块、减少重复或清理技术债时。 | 重构目标、行为保护、风险点、执行步骤、验证方式、回滚点和完成标准。 |
@@ -145,7 +145,7 @@ related: {}
 - 轻量调研：`research`（brief）→ `write-prd` 或 `write-trd`。
 - 正式需求分析：`research`（brief，可选）→ `research`（deep）→ `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
 - 多模型交叉估时：`research`（deep）→ 三个或更多 Reviewer 分别运行 `delivery-estimation`（review）→ Research Lead 运行 `delivery-estimation`（synthesis）。
-- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd，正式交接时）→ `write-trd` → `delivery-readiness`（trd_to_plan，正式交接时）→ `execution-delivery`（plan）→ `delivery-readiness`（plan_to_build，进入实现前）→ `execution-delivery`（delegate，需要委派时）→ `implement-plan` → `prepare-commit` → `release-delivery`（获得对应审批后）。readiness 门是显式阶段门，非正式小改动不进 gate。
+- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd，正式交接时）→ `write-trd` → `delivery-readiness`（trd_to_plan，正式交接时）→ `execution-delivery`（先评估并行，再生成 `batch` 或 `parallel_dag` plan）→ `delivery-readiness`（plan_to_build，进入实现前）→ `execution-delivery`（delegate，选择当前会话或子智能体）→ `implement-plan` → 整体验收/集成验收 → `prepare-commit` → `release-delivery`（获得对应审批后）。readiness 门是显式阶段门，非正式小改动不进 gate。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。
 
 ## Multi-Agent Orchestration
@@ -155,10 +155,10 @@ related: {}
 - Research Lead：绑定 `research`（brief）和 `delivery-estimation`（synthesis），负责研究契约、Reviewer 隔离、差异复核和最终汇总。
 - Requirement & Solution Analyst：绑定 `research`（deep），必要时串联 `write-prd`、`write-trd`、`codebase-analysis`（orientation/impact）。
 - Estimation Reviewer：只绑定 `delivery-estimation`（review 模式）；所有 Reviewer 使用相同冻结输入、指令、Skill 版本和输出格式，首轮不读取其他估时也不读取 synthesis 逻辑，模型或 runtime 作为主要变量。
-- Delivery Actor：按 DAG 节点绑定 `implement-plan` 及节点要求的专项 Skills；收到具体 child issue 后只执行当前节点，不自行认领 sibling issue，也不递归创建 Agent，除非明确拥有编排职责。
+- Delivery Actor：`batch` 计划绑定一个完整 goal 的 `implement-plan`；`parallel_dag` 计划按节点绑定 `implement-plan` 及节点要求的专项 Skills。子智能体只执行收到的整体 goal 或当前节点，不自行改变计划形态、认领 sibling issue 或递归创建 Agent。
 - Release Operator：只绑定 `release-delivery`；从项目 profile 的 `release.yaml` 精确定位 runbook，候选/QG/审批/备份/回滚证据不完整时停止，不自行批准合并或生产发布。
 
-`execution-delivery`（plan 模式）产出的每个节点应使用平台无关的 Actor 契约，至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。这样同一计划可以交给本地 Agent、Multica managed Agent、Squad child issue 或远端 worker，而不需要重写任务边界。
+`execution-delivery`（plan 模式）先产出平台无关的并行性评估；用户选择后，`batch` 计划产出一个整体 Actor 契约，`parallel_dag` 计划的每个节点产出 Actor 契约。契约至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。
 
 ## 与 agent-brain 的任务契约衔接
 
@@ -171,8 +171,8 @@ related: {}
   通过的命令只回报状态/计数，完整 stdout/stderr 留在日志中，失败才回报尾部诊断。
   Context Pack、Experience episode、handoff 和证明流程完整性的文档按需读取，
   不作为每轮默认上下文。
-- `execution-delivery`（plan 模式）节点应携带 `plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
-- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
+- `execution-delivery`（plan 模式）应携带 `orchestration_mode`、`plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
+- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `execution_target`、`required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
 - 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。
 - 状态推进规则：`ready` 只表示依赖满足且可领取；`done` 只表示实现分支完成；只有 Acceptance Pack source hash 匹配且 evidence `overall=pass` 才能进入 `accepted`，下游任务据此 promotion。`skipped` 必须由用户拥有 residual risk，不能自动 promotion。
 - 多 Agent 并发前必须检查规范化后的 `write_ownership`、mutex、branch/worktree 和 base commit；共享 contract/schema/migration/generated artifact 默认单写者。
@@ -183,10 +183,10 @@ related: {}
 
 ```text
 TRD / settled scope
-  → execution-delivery plan (DAG + contract linkage)
-  → execution-delivery delegate (bounded packet + source hash)
+  → execution-delivery plan (parallelism assessment → batch or DAG + contract linkage)
+  → execution-delivery delegate (current session or bounded subagent packet + source hash)
   → agent-brain Task Pack (canonical acceptance + baseline)
-  → implement-plan (node-scoped build/verify)
+  → implement-plan (whole-goal batch or node-scoped build/verify)
   → acceptance.json + scope evidence
   → prepare-commit
 ```

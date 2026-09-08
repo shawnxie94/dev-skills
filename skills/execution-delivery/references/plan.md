@@ -1,19 +1,52 @@
 # Execution Plan (plan mode)
 
-Mode reference for the `$execution-delivery` skill. Read this file only after the router selects `plan`: converting a clear TRD or technical direction into an executable sequence, not re-designing the system or starting code. Contract identity fields, write-ownership and concurrency rules, and artifact-mode behavior are shared and defined in the router SKILL.md.
+Mode reference for the `$execution-delivery` skill. First assess whether
+parallel execution is worthwhile and let the user choose the coordination
+shape. Then convert a clear TRD or technical direction into an executable
+sequence, not a re-design or implementation.
 
 ## Core Principles
 
-- Plan from dependencies, not from a flat TODO list.
-- Build a lightweight implementation DAG before deciding the work order.
-- Put risky or unknown work early enough to validate assumptions before broad implementation.
+- Start from the whole implementation goal and assess parallelism before
+  choosing the plan shape.
+- Default to a whole-goal `batch` plan when the work is mostly serial or
+  parallelism would not materially reduce delivery time.
+- Generate a `parallel_dag` plan only after the user chooses parallel execution
+  and independent actors, dependencies, and write boundaries are clear.
+- A batch plan may contain one root implementation unit and one final
+  acceptance scope. Do not manufacture a DAG merely to describe an internal
+  serial checklist.
+- A parallel-DAG plan contains node dependencies, actor contracts, node-level
+  acceptance, and final integration acceptance.
+- Put risky or unknown work early enough to validate assumptions before broad
+  implementation.
 - Keep write ownership clear. Prefer a single writer for shared files, public interfaces, schemas, migrations, and cross-cutting contracts.
-- Assign execution actors only when parallelism reduces time or improves analysis quality without creating merge conflicts or context confusion.
-- Give every task required capabilities, required skills, write ownership, forbidden writes, a verification checkpoint, and a handoff-readiness signal, plus the shared contract linkage fields.
+- Give every delegated actor the capabilities, skills, scope, verification,
+  evidence, and handoff conditions needed to execute without rediscovery.
 
 ## Implementation Handoff Ownership
 
-This mode owns the canonical execution-plan artifact, its DAG, sequencing, write ownership, and plan hash. When the plan will be implemented by `agent-brain` or `$implement-plan`, materialize it on disk with `status: approved`; chat-only prose is not a handoff.
+This mode owns the canonical execution-plan artifact, its selected
+`orchestration_mode`, sequencing, write ownership, and plan hash. It does not
+implement code or silently choose whether the user wants parallel execution.
+
+The two high-level planning values are:
+
+- `batch`: one whole-goal plan, normally one actor and one final acceptance.
+- `parallel_dag`: multiple independently executable units with node acceptance
+  and final integration acceptance.
+
+The execution target is chosen during `delegate` unless the user has already
+specified it. It is recorded as `execution_target=current_session` or
+`execution_target=subagent` in the handoff. Do not use `execution_mode` for
+this choice: agent-brain reserves that field for the `auto|trivial|bounded|full`
+task lane, while `parallel_mode` remains the lower-level worktree taxonomy.
+
+When the plan will be implemented through agent-brain or `$implement-plan`,
+materialize it on disk with `status: approved`; chat-only prose is not a
+handoff. `delivery-readiness` owns the cross-stage `plan_to_build` assessment;
+agent-brain owns the outer Task Pack, allowed paths, acceptance lifecycle, and
+Done gate.
 
 `delivery-readiness` owns the cross-stage `plan_to_build` assessment and report. `agent-brain` owns the outer Task Pack, allowed paths, acceptance lifecycle, and Task Pack linkage. Emit the shared identity fields defined in the router and hand off to agent-brain for Task Pack creation; do not duplicate those contracts here.
 
@@ -28,9 +61,14 @@ updated_at: <date>
 sources: []
 related: []
 base_commit: <git commit used for planning>
+orchestration_mode: batch | parallel_dag
 ```
 
-`source_plan_sha256` is the SHA-256 of the complete canonical plan file and is recorded in downstream Task Packs; do not put the file's own hash into its frontmatter because that would create a circular hash. `plan_id`, `base_commit`, source artifacts, and plan-unit IDs must remain stable between planning and implementation.
+`source_plan_sha256` is the SHA-256 of the complete canonical plan file and is
+recorded in downstream Task Packs; do not put the file's own hash into its
+frontmatter because that would create a circular hash. `plan_id`,
+`base_commit`, source artifacts, and the root or node `plan_unit_id` values must
+remain stable between planning and implementation.
 
 Before handing off, report:
 
@@ -39,7 +77,11 @@ git rev-parse HEAD
 shasum -a 256 docs/plans/<feature-slug>-execution-plan.md
 ```
 
-After any plan edit, recompute the plan hash and hand the current artifact to `delivery-readiness` and then agent-brain. If the user asked for implementation immediately, the current-turn approval may authorize the handoff; otherwise stop after writing the approved plan.
+After any plan edit, recompute the plan hash and hand the current artifact to
+`delivery-readiness` and then agent-brain. If the user asked for implementation
+immediately, the current-turn approval may authorize the handoff after the
+execution shape and target are explicit; otherwise stop after writing the
+approved plan.
 
 ## Inputs to Look For
 
@@ -61,83 +103,142 @@ Follow the shared document-artifact rules in the router SKILL.md; plans use `doc
 
 When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Ownership section above still requires a canonical plan artifact.
 
-Also include a `Remote Handoff Inputs` section identifying which plan nodes can be delegated and what context, exclusions, verification commands, and acceptance criteria the delegate mode will need.
+Also include a `Remote Handoff Inputs` section identifying the selected
+execution target, the whole-goal contract for `batch`, or the node context,
+exclusions, verification commands, and acceptance criteria that `delegate`
+will need for `parallel_dag`.
 
 ## Planning Workflow
 
 1. Restate the implementation goal.
    - Connect the plan to the TRD and define what will be considered done.
 
-2. Identify implementation units.
-   - Split work into coherent units: contracts, data, backend, frontend, integrations, tests, docs, deployment.
-   - Keep units small enough to verify, but not so small that the plan becomes noise.
+2. Assess parallelism before generating the plan.
+   - Inspect likely units, dependencies, write overlap, actor capabilities, and
+     expected time savings.
+   - Recommend `batch` or `parallel_dag` and explain independent work,
+     expected benefit, coordination cost, and constraints.
+   - If the user has not chosen a shape, return the assessment only. Do not
+     write an approved plan, task packet, or DAG while the choice is pending.
 
-3. Build the implementation DAG.
-   - List each unit and its dependencies.
-   - Mark the critical path.
-   - Mark risky nodes that should be validated early.
-   - Mark shared-write nodes that should not be implemented concurrently.
-   - If implementation units or dependencies are uncertain, run `codebase-analysis` (impact mode) before finalizing the DAG.
+3. Generate the selected plan shape.
+   - For `batch`, use one root unit (for example `plan_unit_id: root`), an
+     ordered internal sequence, one whole-goal actor contract, and one final
+     acceptance scope. Internal steps are not parent-agent interaction points.
+   - For `parallel_dag`, split only independently scoped, owned, and verified
+     units. Include dependencies, critical path, risk-first nodes, node-level
+     acceptance, and final integration acceptance.
 
-4. Choose sequencing.
-   - Prefer thin vertical slices when useful.
-   - Put contract/schema decisions before dependent work.
-   - Put spike or proof-of-risk tasks before broad implementation.
-   - Separate setup, implementation, integration, verification, and cleanup.
+4. Choose sequencing and actor assignment.
+   - Put contract/schema decisions before dependent work and risky validation
+     early enough to protect broad implementation.
+   - For `batch`, prefer one actor for the whole goal.
+   - For `parallel_dag`, choose among the local lead, local subagent, managed
+     agent, remote worker, or unassigned actor for each node.
 
-5. Decide actor assignment and parallelization.
-   - Choose among the local lead, local subagent, managed agent, remote worker, or unassigned actor.
-   - Prefer delegated actors for independent read-only analysis, isolated modules, tests, documentation, or clearly bounded implementation.
-   - Avoid concurrent writes to the same files, public contracts, database schemas, generated artifacts, or migration paths unless ownership is explicit.
-   - Before approving parallel nodes, normalize their pathspecs and reject overlapping write ownership or mutexes; record the result in the plan.
-   - Assign each node a `parallel_mode` using the shared concurrency rules in the router, after direct and indirect impact analysis.
+5. Define ownership and parallelism.
+   - Avoid concurrent writes to shared files, public contracts, database
+     schemas, generated artifacts, migrations, dependency manifests, or
+     lockfiles.
+   - Before approving parallel nodes, normalize pathspecs and reject
+     overlapping write ownership or mutexes. Record `parallel_mode` after
+     direct and indirect impact analysis.
 
-6. Create per-actor execution contracts when delegation is recommended.
-   - Each actor contract must define objective, scope, inputs, required capabilities, required skills, write ownership, forbidden writes, steps, verification, expected output, acceptance criteria, evidence required, and handoff readiness.
-   - Keep execution prompts narrow and avoid leaking expected answers.
+6. Create execution contracts.
+   - Each delegated actor contract must define objective, scope, inputs,
+     required capabilities, required skills, write ownership, forbidden
+     writes, steps, verification, expected output, acceptance criteria,
+     evidence required, and handoff readiness.
+   - A delegated `batch` contract covers the full goal and one final return.
+     A delegated `parallel_dag` contract covers only its assigned node.
 
 7. Define verification and handoff.
-   - Attach verification to each phase or DAG node.
-   - State what the coordinating actor should inspect before accepting delegated output.
-   - Write the plan and remote handoff inputs to the canonical execution plan file before the final response whenever the plan is implementation-bound.
-   - Compute the canonical file hash only after all edits are complete; downstream Task Packs copy it into `source_plan_sha256`.
+   - For `batch`, state that the coordinating actor waits for the explicit
+     final result before running one final acceptance.
+   - For `parallel_dag`, state what evidence accepts each node and unblocks
+     downstream work, followed by final integration acceptance.
+   - Write the plan and handoff inputs to the canonical file before the final
+     response whenever the plan is implementation-bound.
+   - Compute the canonical file hash only after all edits are complete;
+     downstream Task Packs copy it into `source_plan_sha256`.
 
 ## Handoff Rules
 
-- If the plan is approved for delegation to another machine, remote Codex, managed-agent issue, squad child issue, GitHub Issue, or task file, hand off to this skill's `delegate` mode.
-- If the plan is accepted and implementation should begin, hand off to `agent-brain` task mode, which creates the linked Task Pack, and then to `$implement-plan`.
+- If the user has not chosen the execution shape, stop after the parallelism
+  assessment; do not guess.
+- If the approved plan uses `batch`, delegate the whole plan as one goal when
+  `execution_target=subagent`, or route it to `$implement-plan` when
+  `execution_target=current_session`.
+- If the approved plan uses `parallel_dag`, hand it to `delegate` for the
+  user's execution-target choice and node packet generation. True parallel
+  execution requires multiple actors; do not simulate it with a fake DAG in a
+  single current session.
 - If the plan artifact, hash, approval, or Task Pack linkage is missing, stop and repair the planning handoff before implementation.
 - If implementation units, dependencies, or shared-write boundaries are unclear, hand off to `codebase-analysis` (impact mode).
 - If the plan is for a refactor, ensure `refactor-plan` has defined behavior protection first.
 
 ## Execution Actor Decision Rules
 
-Recommend delegated actors when:
+Recommend `batch` when:
 
-- Tasks are dependency-light and can be validated independently.
-- Work is read-only research, codebase scanning, test gap analysis, or isolated module implementation.
-- The expected output can be structured and reviewed by the coordinating actor.
-- There is little risk of multiple agents editing the same shared files or contracts.
+- The task has one dominant implementation path.
+- Modules are tightly coupled or share central contracts.
+- A single writer can finish and verify the goal without coordination.
+- The expected parallelism is low or would not materially shorten delivery.
+- The output is easier to review as one complete result.
 
-Avoid delegation when:
+Recommend `parallel_dag` when:
 
+- At least two actors can make meaningful progress independently.
+- Each actor's output can be objectively verified.
+- Write ownership, mutexes, dependencies, and worktree policy are explicit.
+- Parallel execution reduces wall-clock time or improves analysis quality.
+- The coordination and integration cost is justified.
+
+Avoid `parallel_dag` when:
+
+- The user has not chosen parallel execution.
 - Requirements or technical boundaries are still unclear.
+- All work touches one central module, public interface, schema, migration, or
+  generated artifact.
 - Tasks are tightly coupled or require continuous local debugging.
-- Work touches one central module, public interface, database schema, migration, or generated artifact.
 - The result cannot be objectively reviewed by the coordinating actor.
 
-When in doubt, delegate analysis and keep shared code-writing with one explicitly assigned actor.
+When in doubt, use `batch` and let the actor perform internal serial steps.
 
-Never delegate work that requires runtime-reserved tooling. Browser control, desktop control, and visual acceptance gates are main-agent-only in runtimes such as ZCode — a delegated actor cannot load or use them. Assign such nodes to the local lead and mark the required capability accordingly.
+Never delegate work that requires runtime-reserved tooling. Browser control,
+desktop control, and visual acceptance gates are main-agent-only in runtimes
+such as ZCode — a delegated actor cannot load or use them. Assign such checks
+to the current-session lead and record the required capability.
 
 ## Output Format
 
-Answer in the user's language unless they request otherwise. Use this structure when practical:
+When the user has not yet chosen a shape, return only:
+
+```markdown
+## Parallelism Assessment
+
+- Recommended shape: batch | parallel_dag
+- Candidate independent work: <items or None>
+- Expected benefit: <time or quality benefit>
+- Coordination cost: <merge, worktree, mutex, and communication cost>
+- Risks and constraints: <shared writes, runtime tools, or None>
+- User decision needed: batch | parallel_dag
+```
+
+After the user chooses and the plan is generated, use this structure as
+appropriate:
 
 ```markdown
 ## Implementation Goal
 
 <What will be implemented and what done means>
+
+## Execution Decision
+
+- orchestration_mode: batch | parallel_dag
+- execution_target: pending | current_session | subagent
+- user_approval: <pending|approved>
 
 ## Plan Artifact
 
@@ -147,11 +248,19 @@ Answer in the user's language unless they request otherwise. Use this structure 
 - base_commit: `<git commit>`
 - source_plan_sha256: `<sha256 of the complete plan file>`
 
-## Implementation Units
+## Batch Plan
 
-| ID | Unit | Description | Actor | Risk |
-|---|---|---|---|---|
-| U1 | <Name> | <Scope> | Local lead / Local subagent / Managed agent / Remote worker / Unassigned | Low/Med/High |
+- plan_unit_id: `root`
+- actor: <actor>
+- acceptance_scope: batch
+- internal_sequence: <ordered implementation and verification steps>
+- final_acceptance: <one complete acceptance scope>
+
+## Parallel DAG Plan
+
+| ID | Unit | Depends On | Actor | Risk | Acceptance |
+|---|---|---|---|---|---|
+| U1 | <Name> | <None or IDs> | <Actor> | Low/Med/High | <IDs> |
 
 ### Node Contract: U1
 
@@ -164,30 +273,15 @@ Answer in the user's language unless they request otherwise. Use this structure 
 - Evidence required: <machine-readable path, overall status, exit codes, git_head, changed files, source hashes, or manual acknowledgement>
 - Handoff readiness: <observable conditions required before downstream actors can start>
 
-## Implementation DAG
-
-| Unit | Depends On | Why |
-|---|---|---|
-| U2 | U1 | <Dependency reason> |
-
-Critical path: <U1 -> U2 -> U4>
-Risk-first nodes: <U3, U5>
-Shared-write nodes: <U1, U2>
+Critical path: <U1 -> U2 -> U4, or None for batch>
+Risk-first nodes: <U3, U5, or None>
+Shared-write nodes: <U1, U2, or None>
 
 ## Execution Sequence
 
-1. <Step, units covered, verification checkpoint>
-2. <Step, units covered, verification checkpoint>
-3. <Step, units covered, verification checkpoint>
-
-## Actor Parallelization Plan
-
-Recommendation: <Read-only parallel / Serial same worktree / Concurrent writes in worktrees / Serial shared writer>
-
-Reasoning:
-  - <Why parallelism helps or hurts>
-- Impact decision: <read_only_parallel | serial_same_worktree | concurrent_write_worktree | serial_shared_writer>
-- Worktree required: <yes/no and why>
+1. <Batch internal step, or DAG units covered and verification checkpoint>
+2. <Batch internal step, or DAG units covered and verification checkpoint>
+3. <Batch internal step, or DAG units covered and verification checkpoint>
 
 ## Per-Actor Execution Contracts
 
@@ -213,11 +307,12 @@ Handoff readiness: <What must be true before the result can be accepted or downs
 
 ## Verification Plan
 
-<Tests, checks, manual validation, logs, metrics, or review gates>
+<Batch final acceptance, or node and final integration checks for a DAG>
 
 ## Open Questions and Risks
 
 <Decisions or risks that must be resolved during execution>
 ```
 
-For small changes, compress the DAG and actor sections. If delegation is not useful, say so explicitly and keep the plan serial.
+For a small batch plan, omit the parallel-DAG section. For a parallel plan,
+do not omit node acceptance or the final integration acceptance.

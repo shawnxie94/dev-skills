@@ -26,7 +26,7 @@ Evaluate the stage that is actually being crossed. Do not mark an artifact ready
 | --- | --- |
 | `prd_to_trd` | product goal, scope/non-scope, user scenarios, observable acceptance, relevant NFRs, edge/failure behavior, permissions, dependencies, and product decisions |
 | `trd_to_plan` | architecture ownership, module boundaries, interfaces, data/state, migration/compatibility, failure/retry/concurrency, security, observability, testing, rollback, and technical decisions |
-| `plan_to_build` | approved canonical plan, stable plan ID, base commit, current plan SHA, DAG/dependencies, write ownership, allowed paths, acceptance IDs, verification commands, and Task Pack linkage |
+| `plan_to_build` | approved canonical plan, stable plan ID, base commit, current plan SHA, selected `orchestration_mode` (`batch` or `parallel_dag`), batch sequence or DAG/dependencies as appropriate, write ownership, allowed paths, acceptance IDs, verification commands, and Task Pack linkage |
 | `implementation_to_verify` | changed-file scope, implementation-to-plan traceability, unit acceptance evidence, known deviations, and residual risks |
 | `verify_to_release` | candidate identity, quality-gate evidence, smoke checks, approvals, runbook, rollback path, observation window, and release risks |
 

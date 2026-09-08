@@ -1,4 +1,4 @@
 interface:
   display_name: "Execution Delivery"
-  short_description: "Execution plans and delegation packets"
-  default_prompt: "Use $execution-delivery plan mode to turn this TRD into an execution plan."
+  short_description: "Assess execution shape, plan, and route delivery"
+  default_prompt: "Use $execution-delivery plan mode to assess parallelism first; after the user chooses batch or parallel_dag, generate the approved plan, then use delegate to route it to the current session or a subagent."

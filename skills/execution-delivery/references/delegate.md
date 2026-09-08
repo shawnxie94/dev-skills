@@ -1,20 +1,28 @@
-# Delegation Packets (delegate mode)
+# Execution Target and Delegation (delegate mode)
 
-Mode reference for the `$execution-delivery` skill. Read this file only after the router selects `delegate`: converting an approved execution plan or settled implementation node into one or more delegated execution task packets. The target may be a remote Codex, managed-agent issue, squad child issue, GitHub Issue, or workspace task file. The output should be narrow enough that the assigned actor can execute it without redoing product discovery or expanding scope.
+Mode reference for the `$execution-delivery` skill. Read this file only after
+the router selects `delegate`: route an approved execution plan to the current
+session or a subagent. A subagent target receives one whole-goal packet for a
+`batch` plan, or bounded node packets for a `parallel_dag` plan. The target may
+be a local child, remote Codex, managed-agent issue, squad child issue, GitHub
+Issue, or workspace task file. This mode does not implement code.
 
 ## Core Principles
 
 - Treat the handoff packet as the contract between planning and execution.
 - Preserve traceability to PRD, TRD, execution plan, issues, decisions, and code context.
-- Reuse the plan-mode DAG as the source of truth; do not create a second independent DAG.
-- Keep every remote task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
+- Preserve the plan's `orchestration_mode`: do not create a DAG for a `batch` plan or a second DAG for a `parallel_dag` plan.
+- Require an explicit execution target: `current_session` or `subagent`. Do not silently turn a routing request into remote execution.
+- Keep every subagent task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
 - Preserve required capabilities and required skills from the source execution-plan node when the target platform supports them.
 - Preserve the shared contract fields defined in the router: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `plan_unit_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, and `evidence_required`.
-- Split parallel tasks only when dependencies and write boundaries are clear.
-- Put only currently executable tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
-- Model multiple tasks from the same requirement as one feature task group with a DAG, not as unrelated ready tasks.
+- Preserve `orchestration_mode` and `execution_target` in the packet. Do not reuse agent-brain's `execution_mode` task lane for the plan shape.
+- Split parallel tasks only when the approved `parallel_dag` has clear dependencies and write boundaries.
+- Put only currently executable parallel tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
+- For a delegated `batch`, create one ready task for the whole goal rather than unrelated serial tasks.
 - Do not implement code or redesign the feature; if the plan is unclear, hand back to plan mode or `codebase-analysis` (impact mode).
-- Do not mark a task ready for remote execution unless the user or source artifact clearly indicates approval.
+- Do not mark a subagent task ready unless the user or source artifact clearly indicates approval and the execution target is explicit.
+- A subagent handoff is one goal and one final return by default. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. If acceptance fails, it may issue one consolidated repair packet; a second failed attempt or unresolved blocker escalates to the user.
 
 ## Inputs to Look For
 
@@ -24,25 +32,51 @@ Extract:
 
 - Source artifacts and their file paths.
 - Approved scope and explicit non-goals.
-- Execution plan DAG nodes, dependencies, critical path, risk-first nodes, shared-write nodes, and remote handoff inputs.
-- Required capabilities and required skills for each execution-plan node.
-- Task Pack linkage and canonical acceptance ids for each execution-plan node.
+- The plan's `orchestration_mode`, selected or pending `execution_target`, and whole-goal or node-level handoff inputs.
+- For `parallel_dag`: DAG nodes, dependencies, critical path, risk-first nodes, shared-write nodes, and per-node handoff inputs.
+- For `batch`: the single root unit, internal sequence, final acceptance scope, and complete-goal handoff inputs.
+- Required capabilities and required skills for the whole actor or each execution-plan node.
+- Task Pack linkage and canonical acceptance ids for the whole goal or each execution-plan node.
 - Plan hash, Task Pack hash, Acceptance Pack path/hash, and baseline commit when available.
 - Modules, files, APIs, schemas, migrations, generated artifacts, and config that each task may touch.
 - Verification commands, manual checks, fixtures, logs, or PR review gates.
 - Target repo, target branch, branch naming, PR expectations, and feedback format.
 
-## Feature Task Groups
+## Target Routing
 
-When multiple tasks belong to the same requirement or feature:
+The delegate mode has two execution targets:
 
-- Start from the source execution plan DAG. If the DAG is missing, stale, or ambiguous, hand back to plan mode instead of inventing a new one.
+- `current_session`: route the approved plan directly to `$implement-plan` in
+  the current session. Do not create a remote task packet. If the plan is
+  `batch`, the current session owns the whole implementation and final
+  acceptance. If the user requested `parallel_dag` but no additional actors
+  are available, report that true parallelism cannot occur and ask to downgrade
+  to `batch` or choose `subagent`.
+- `subagent`: create a task packet for a child actor. For `batch`, the packet
+  covers the complete goal and has one final acceptance scope. For
+  `parallel_dag`, create one packet per runnable node and preserve the source
+  dependencies.
+
+The target choice may be recorded in the plan when known, but `delegate` must
+obtain it before creating a ready packet or starting current-session
+implementation.
+
+## Parallel DAG Task Groups
+
+Use this section only when the approved plan has `orchestration_mode:
+parallel_dag` and the target is `subagent`:
+
+- Start from the source execution plan DAG. If the DAG is missing, stale, or
+  ambiguous, hand back to plan mode instead of inventing a new one.
 - Assign the same `parallel_group` and a stable `feature` value to all tasks.
-- Assign a `phase` that reflects the DAG layer, such as `contract`, `backend`, `frontend`, `integration`, or `cleanup`.
+- Assign a `phase` that reflects the DAG layer, such as `contract`, `backend`,
+  `frontend`, `integration`, or `cleanup`.
 - Preserve the execution plan unit IDs in each task packet with `plan_unit_id`.
 - Put only root nodes with no unmet dependencies in `ready`.
-- Put approved downstream nodes in `blocked` until their dependencies are accepted or merged.
-- Add `unblocks` to each task when completing it can make downstream tasks runnable.
+- Put approved downstream nodes in `blocked` until their dependencies are
+  accepted or merged.
+- Add `unblocks` to each task when completing it can make downstream tasks
+  runnable.
 - Prefer a contract-first split when possible:
 
 ```text
@@ -55,37 +89,56 @@ contract/schema/API task
   -> integration task
 ```
 
-Do not use stacked branches by default. Prefer merging or accepting the dependency task, then creating or rebasing downstream task branches from the updated base branch.
+Do not use stacked branches by default. Prefer accepting the dependency task,
+then creating or rebasing downstream task branches from the updated base
+branch.
 
 ## Document Artifact Mode
 
-Follow the shared document-artifact rules in the router SKILL.md. Task files use `tasks/draft/` by default, `tasks/ready/` only when explicitly approved for remote execution, and `tasks/blocked/` for approved but dependency-blocked tasks (or keep them in draft with `status: blocked` when the blocked directory is not configured). Use stable, descriptive filenames such as `tasks/draft/<feature-slug>-backend.md`.
+Follow the shared document-artifact rules in the router SKILL.md. Subagent task
+files use `tasks/draft/` by default, `tasks/ready/` only when explicitly
+approved for subagent execution, and `tasks/blocked/` for approved but
+dependency-blocked parallel tasks (or keep them in draft with `status:
+blocked` when the blocked directory is not configured). A current-session
+target does not need a task file. Use stable filenames such as
+`tasks/draft/<feature-slug>-whole-goal.md` or
+`tasks/draft/<feature-slug>-backend.md`.
 
 ## Handoff Workflow
 
-1. Confirm readiness.
+1. Confirm readiness and target.
    - Identify whether the source plan is approved, draft, or ambiguous.
+   - Read `orchestration_mode` and obtain `execution_target=current_session`
+     or `execution_target=subagent`. If either decision is missing, return the
+     decision needed and stop.
    - If approval is ambiguous, write draft tasks only; do not place tasks in `ready`.
-   - If a task depends on another task that is not already done, accepted, merged, or explicitly satisfied, do not place it in `ready`; mark it `blocked` or keep it in draft.
+   - If a `parallel_dag` task depends on another task that is not already done,
+     accepted, merged, or explicitly satisfied, do not place it in `ready`;
+     mark it `blocked` or keep it in draft.
    - If the implementation plan is missing or too vague, hand off to plan mode.
 
-2. Select remote task units.
-   - Start from execution plan DAG nodes and `Remote Handoff Inputs`.
-   - Preserve DAG unit IDs and dependencies when mapping units to remote tasks.
-   - Group tightly coupled nodes into one task when separating them would create coordination overhead.
-   - Split independent nodes when each can be verified and reviewed separately.
-   - Keep shared contracts, schemas, migrations, generated artifacts, and cross-cutting config under a single writer.
-   - If grouping or splitting changes the source DAG shape, record the mapping and reason; if the change alters dependencies, hand back to plan mode.
+2. Route the target.
+   - For `current_session`, hand the approved plan directly to `$implement-plan`
+     and record that no subagent packet was created.
+   - For `subagent` + `batch`, create exactly one whole-goal task packet.
+   - For `subagent` + `parallel_dag`, select runnable nodes from the source
+     DAG. Preserve DAG unit IDs and dependencies; group tightly coupled nodes
+     only when the mapping does not change dependency semantics.
+   - Keep shared contracts, schemas, migrations, generated artifacts, and
+     cross-cutting config under a single writer.
+   - If mapping would change the source DAG shape or acceptance semantics, hand
+     back to plan mode.
 
 3. Define dependency and parallelism rules.
-   - Reuse the source execution plan DAG before writing task files.
-   - List `Depends On` for every task.
-   - List `Unblocks` for tasks that enable downstream work.
-   - List `Can Run In Parallel With` only when write ownership does not overlap.
-   - List `Must Not Run In Parallel With` for shared files, public contracts, database migrations, generated artifacts, or unclear boundaries.
-   - Assign a `parallel_group` when multiple tasks belong to the same approved plan.
-   - Define `mutex` values for shared resources that must not be edited concurrently, such as `api-schema`, `db-migration`, `generated-types`, `package-lock`, or a concrete path glob.
-   - Record the impact decision for each task using the shared `parallel_mode` values in the router.
+   - For `batch`, record `Depends On: None`, `Can Run In Parallel With: None`,
+     and the serial writer rule; do not invent node dependencies.
+   - For `parallel_dag`, reuse the source DAG before writing task files.
+   - List `Depends On`, `Unblocks`, and parallel-safe peers for every task.
+   - List `Must Not Run In Parallel With` for shared files, public contracts,
+     database migrations, generated artifacts, or unclear boundaries.
+   - Assign a `parallel_group` and `mutex` values when multiple tasks belong to
+     the same approved plan. Record the low-level `parallel_mode` for each
+     task.
 
 4. Define write ownership.
    - Specify allowed paths, modules, APIs, config, tests, and docs.
@@ -93,29 +146,54 @@ Follow the shared document-artifact rules in the router SKILL.md. Task files use
    - If write ownership cannot be made clear, keep the task serial and mark the risk.
 
 5. Define branch and worktree isolation after impact analysis.
+   - A current-session target does not need a subagent branch or worktree.
    - Read-only parallel tasks do not need a branch or worktree.
    - Serial tasks with disjoint ownership may reuse the current checkout; the orchestrator must serialize writes.
    - Assign one branch and one git worktree per task only when tasks must write simultaneously, such as `task/<remote-task-id>` and `.worktrees/<remote-task-id>`.
    - Do not allow two write agents to run concurrently in the same working tree or on the same branch.
    - Shared contract, schema, migration, generated artifact, dependency manifest, and lockfile tasks should be serial unless the plan explicitly assigns single-writer ownership.
 
-6. Write the task packet.
-   - Include source artifacts, objective, scope, exclusions, required context, implementation instructions, verification, acceptance criteria, blocking conditions, and feedback format.
+6. Write the subagent task packet when the target is `subagent`.
+   - Include source artifacts, objective, whole-goal or node scope, exclusions,
+     required context, implementation instructions, verification, acceptance
+     criteria, blocking conditions, and feedback format.
    - Include branch and PR expectations when known.
    - When the target uses agent-brain, create or update its Task Pack from this packet; do not make the remote Markdown acceptance list a second source of truth.
-   - Keep instructions concrete enough for `$implement-plan` to start without further discovery beyond reading the referenced files.
+   - Keep instructions concrete enough for `$implement-plan` to start without
+     further discovery beyond reading the referenced files.
+   - For a `batch` packet, require one active goal covering the complete plan;
+     internal steps and checks must not trigger parent-agent interaction.
 
-7. Define execution feedback.
-   - Require remote Codex to report changed files, tests run, result, deviations, blockers, and PR or commit reference.
-   - Require blockers to preserve current branch state and explain the missing decision or failing check.
+7. Define execution feedback and waiting.
+   - Require the subagent to report changed files, tests run, result, deviations,
+     blockers, attempt number, and PR or commit reference.
+   - Require the subagent to return only after the whole `batch` goal or
+     assigned DAG node has reached an explicit `completed`, `blocked`, or
+     `failed` state, unless a human decision is required.
+   - The coordinating agent must use the runtime's bounded wait mechanism when
+     available, avoid repeated polling or unchanged-context reads, and not
+     start acceptance until the subagent explicitly returns `completed`.
+     `blocked` and `failed` are terminal reports for repair or escalation, not
+     acceptance passes.
+   - Require blockers to preserve current branch state and explain the missing
+     decision or failing check.
 
-8. Finish with routing.
+8. Define the repair limit.
+   - If final batch acceptance or DAG integration acceptance fails, the
+     coordinating agent creates one repair packet containing all known findings,
+     failed checks, expected corrections, and the same overall acceptance.
+   - Retry the same goal at most once. Do not send piecemeal repair prompts.
+   - If the second attempt fails or remains blocked, stop automation and return
+     the evidence and choices to the user.
+
+9. Finish with routing.
    - If tasks are draft, state what approval is needed before moving them to ready.
    - If tasks are blocked by dependencies, state which upstream task or merge must complete first.
    - If tasks are ready, state the recommended claim or execution order.
    - State the promotion rule for downstream tasks, for example "after `task/api-contract` is accepted, promote `task/backend` and `task/frontend` to ready."
    - State any mapping from execution plan units to remote tasks.
-   - If implementation should begin on the current machine, hand off to `$implement-plan`; otherwise leave the task ready for remote pickup.
+   - If `execution_target=current_session`, hand off to `$implement-plan`.
+     Otherwise leave the subagent task ready for pickup.
 
 ## Task Packet Format
 
@@ -128,13 +206,20 @@ type: remote_task
 status: draft
 created_at: <date>
 updated_at: <date>
+orchestration_mode: batch | parallel_dag
+execution_target: subagent
+acceptance_scope: batch | node_and_batch
+attempt_policy:
+  max_attempts: 2
+  repair: consolidated_repair_packet
+  escalate_after_exhaustion: user_decision
 sources:
   - <source artifact path or issue>
 related:
   prd: <path>
   trd: <path>
   execution_plan: <path>
-plan_unit_id: <execution-plan-unit-id>
+plan_unit_id: <root for batch, or execution-plan-unit-id for parallel_dag>
 plan_id: <stable execution plan id>
 source_plan_sha256: <sha256 of the canonical execution plan>
 base_commit: <commit from which the task must start>
@@ -166,7 +251,7 @@ forbidden_writes:
   - <forbidden path or module>
 ---
 
-# Remote Task: <Title>
+# Subagent Task: <Title>
 
 ## Objective
 
@@ -191,7 +276,10 @@ forbidden_writes:
 
 ## Dependencies And Parallelism
 
-- Plan unit: <execution-plan-unit-id>
+- Orchestration mode: <batch|parallel_dag>
+- Execution target: `subagent`
+- Acceptance scope: <batch|node_and_batch>
+- Plan unit: <root for batch, or execution-plan-unit-id for parallel_dag>
 - Feature: <feature-id>
 - Phase: <phase>
 - Depends on: <tasks or "None">
@@ -214,6 +302,9 @@ forbidden_writes:
 
 ## Execution Steps
 
+For `batch`, execute the complete approved plan in this one goal. Internal
+steps may be sequential, but must not trigger parent-agent interaction.
+
 1. <Step>
 2. <Step>
 
@@ -225,10 +316,17 @@ forbidden_writes:
 
 - <Observable pass/fail condition>
 
+For `batch`, these are the complete-goal acceptance conditions. For
+`parallel_dag`, these are the assigned node conditions; the coordinating actor
+also performs final integration acceptance.
+
 ## Task Contract Bridge
 
 - If agent-brain is used, the Task Pack is the outer contract and its `acceptance` list is canonical.
-- Copy this packet's `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, `required_skills`, and `plan_unit_id` into the Task Pack linkage fields.
+- Copy this packet's `orchestration_mode`, `execution_target`, `plan_id`,
+  `source_plan_sha256`, `base_commit`, `task_id`, `source_artifacts`,
+  `source_hash`, `source_task_pack_sha256`, `acceptance_ids`,
+  `required_skills`, and `plan_unit_id` into the Task Pack linkage fields.
 - Generate the compatibility Acceptance Pack from the Task Pack and retain its source hash; do not edit acceptance checks independently on the remote side.
 - Evidence must identify a path, overall status, exit codes, git head, changed files, and source hashes; manual checks must record explicit acknowledgement.
 - Done requires passing acceptance evidence plus a clean scope check. A text claim that tests passed is not evidence.
@@ -241,7 +339,8 @@ forbidden_writes:
 
 - Changed files:
 - Tests run:
-- Result:
+- Result: `completed` | `blocked` | `failed`
+- Attempt: `1` | `2`
 - Deviations:
 - Blockers:
 - PR/commit:
@@ -252,7 +351,17 @@ forbidden_writes:
 Answer in the user's language unless they request otherwise. Prefer:
 
 ```markdown
-## Prepared Remote Tasks
+## Execution Handoff
+
+- orchestration_mode: `batch` | `parallel_dag`
+- execution_target: `current_session` | `subagent`
+- approval: `<pending|approved>`
+
+If `execution_target=current_session`, report the direct `$implement-plan`
+handoff and do not create a remote task table. If `execution_target=subagent`,
+use the table below.
+
+## Prepared Subagent Tasks
 
 | Task | Status | Path/Issue | Depends On | Parallel Group |
 |---|---|---|---|---|
@@ -260,15 +369,20 @@ Answer in the user's language unless they request otherwise. Prefer:
 
 ## Execution Order
 
-<Claim order, merge order, and parallel-safe groups.>
+<For batch: one whole-goal task. For parallel_dag: claim order, merge order,
+and parallel-safe groups.>
 
 ## Approval Needed
 
-<What must be confirmed before draft tasks become ready, or "None".>
+<Execution target, plan approval, or downstream dependency confirmation; or
+"None".>
 
 ## Notes
 
 <Residual risks, shared-write warnings, or missing context.>
 ```
 
-For one small task, compress the table but still state status, path or issue, dependencies, and approval state.
+For a batch target, the table contains one whole-goal task and one final
+acceptance scope. For a parallel DAG, state node dependencies, node acceptance,
+and final integration acceptance. For one small task, compress the table but
+still state status, path or issue, dependencies, and approval state.
