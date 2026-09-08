@@ -68,7 +68,7 @@ related: []
 base_commit: <git commit used for planning>
 orchestration_mode: batch | parallel_dag
 execution_target: pending | current_session | subagent
-execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp
+execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
 ```
 
 `source_plan_sha256` is the SHA-256 of the complete canonical plan file and is
@@ -249,7 +249,7 @@ appropriate:
 
 - orchestration_mode: batch | parallel_dag
 - execution_target: pending | current_session | subagent
-- execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp
+- execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
 - user_approval: <pending|approved>
 
 ## Plan Artifact

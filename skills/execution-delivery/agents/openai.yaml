@@ -1,4 +1,4 @@
 interface:
   display_name: "Execution Delivery"
   short_description: "Assess execution shape, plan, and route delivery"
-  default_prompt: "Use $execution-delivery plan mode to assess parallelism first; after the user chooses batch or parallel_dag, generate the approved plan, then use delegate to route it to the current session or a subagent. For a subagent, resolve the execution backend from the current harness: codex_subagent, or zcode_mcp only when the ZCode MCP bridge tools are exposed in this session."
+  default_prompt: "Use $execution-delivery plan mode to assess parallelism first; after the user chooses batch or parallel_dag, generate the approved plan, then use delegate to route it to the current session or a subagent. For a subagent, resolve the execution backend from the current harness: codex_subagent, zcode_mcp only when the ZCode MCP bridge tools are exposed in this session, or pi_subagent when the native subagent tool is present in a Pi session."

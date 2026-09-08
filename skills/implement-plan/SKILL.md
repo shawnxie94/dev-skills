@@ -69,8 +69,9 @@ For an agent-brain Task Pack, verify all of these values before Build:
 3. `plan_id`, `plan_unit_id`, and `base_commit` match the plan and the assigned unit.
 4. The plan status is `approved`, or the user explicitly approved it in the current turn.
 5. The Task Pack's `allowed_paths`, acceptance checks, and write ownership are a bounded subset of the plan unit or whole-goal root.
-6. If `execution_target=subagent`, `execution_backend` is present and is either
-   `codex_subagent` or `zcode_mcp`; never switch the selected adapter.
+6. If `execution_target=subagent`, `execution_backend` is present and is one of
+   `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or `pi_subagent`, matching the
+   current harness; never switch the selected adapter.
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
 
@@ -305,7 +306,7 @@ Answer in the user's language unless they request otherwise. Use concise progres
 - status: `completed` | `blocked` | `failed`
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
-- execution_backend: `codex_subagent` | `zcode_mcp`
+- execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
 - attempt: `1` | `2`
 
 ## Implemented Scope

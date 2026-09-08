@@ -18,7 +18,8 @@ Issue, or workspace task file. This mode does not implement code.
 - Preserve the shared contract fields defined in the router: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `plan_unit_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, and `evidence_required`.
 - Preserve `orchestration_mode`, `execution_target`, and `execution_backend` in
   the packet. `execution_backend` is required only when the target is
-  `subagent`; it must be `zcode_subagent`, `codex_subagent`, or `zcode_mcp`,
+  `subagent`; it must be `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or
+  `pi_subagent`,
   resolved by the current harness (see the backend matrix), never picked by
   preference. Do not reuse agent-brain's `execution_mode` task lane for the
   plan shape or adapter.
@@ -70,6 +71,7 @@ current harness, not by preference:
 
 - ZCode session (native `Agent` tool present): `execution_backend=zcode_subagent`. Never spawn Codex children from ZCode (`codex_subagent` is unavailable here), and never wrap ZCode subagents in MCP calls (`zcode_mcp` is a cross-harness bridge, not in-session delegation).
 - Codex session (`multi_agent_v1` tools present): `execution_backend=codex_subagent`, or `zcode_mcp` only when the ZCode MCP bridge tools are actually exposed in that session.
+- Pi session (native `subagent` tool present, spawned by the `pi-coding-agent` `subagent/` extension): `execution_backend=pi_subagent`. Never dispatch from Pi to ZCode or Codex children; the Pi `subagent` tool is the in-session delegation mechanism.
 - Neither tool family is available: report a blocked handoff.
 
 All adapters execute the packet; no adapter's success declaration is the final
@@ -83,6 +85,7 @@ named tool.
 | `zcode_subagent` | Native `Agent` tool, one call per packet with a self-contained prompt | Foreground call blocks until the final message; `run_in_background` + `TaskOutput` (blocking) for long nodes; no polling | `SendMessage` to the same agent, once, with the complete repair packet | ZCode native child implementation and tests |
 | `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, once, with the complete repair packet | Codex child implementation and internal verification |
 | `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` once on the same task with the complete repair packet | ZCode code implementation and repository tests when explicitly available |
+| `pi_subagent` | `subagent` tool (single mode) with one complete goal or assigned DAG node; each call spawns an isolated `pi` process | Tool call blocks until the child process exits with its final message; no polling | Re-spawn a new `subagent` single-mode call with the complete repair packet, the source packet, and `attempt: 2` | Pi child implementation and repository tests |
 
 ### `zcode_subagent`
 
@@ -155,6 +158,41 @@ ZCode session delegates — inside ZCode use `zcode_subagent`.
   coordinating session unless the adapter explicitly declares that capability
   and the approved plan authorizes it.
 
+### `pi_subagent`
+
+Pi sessions only; unavailable from ZCode or Codex. The coordinating session
+runs the `pi-coding-agent` with the `subagent/` extension loaded, exposing the
+native `subagent` tool.
+
+- Dispatch through the `subagent` tool in single mode: `{ agent, task, cwd }`.
+  The task must be a self-contained prompt carrying the complete task packet
+  (or its file path plus a one-paragraph objective), the canonical plan path,
+  and every command the child must run. A fresh `pi` subagent starts with no
+  conversation context, so the prompt must not rely on session history or
+  shorthand established earlier.
+- Use an agent with write access for nodes that write code or run
+  state-changing commands; an analysis-only agent for read-only nodes.
+- The tool call blocks until the child `pi` process exits and returns its
+  final message; that message is the terminal result. For concurrent
+  `parallel_dag` dispatch, issue multiple `subagent` calls in one message so
+  they run in parallel, or use the tool's `tasks` array (max 8 tasks, 4
+  concurrent). Do not busy-poll.
+- Require the final message to state `completed`, `blocked`, or `failed`,
+  plus changed files, tests, deviations, blockers, and `attempt`. The child's
+  final message is visible only to the coordinator, not to the user — relay
+  the outcome after acceptance.
+- Only after `completed`, run the coordinator's acceptance. If it fails,
+  re-spawn a new single-mode `subagent` call with the complete consolidated
+  repair packet, the source packet, and `attempt: 2`. Unlike ZCode/Codex
+  adapters, a Pi subagent is an isolated process with no resumed context, so
+  the repair re-dispatch must be fully self-contained: all findings, failed
+  checks, expected corrections, and the same overall acceptance. A second
+  failure or unresolved blocker goes to the user; never send piecemeal repair
+  prompts.
+- Pi subagents inherit the dispatching session's active model and thinking
+  level unless the agent definition sets `model`; account for this when
+  selecting agents with specific cost or capability requirements.
+
 The adapter contract is:
 
 ```text
@@ -162,10 +200,10 @@ dispatch once → bounded wait → explicit terminal result → coordinator acce
                          ↘ one consolidated repair → bounded wait → acceptance
 ```
 
-Do not claim that `zcode_subagent`, `codex_subagent`, or `zcode_mcp` is
-available merely because the protocol supports it. If the runtime tool required
-by the harness-mandated backend is unavailable, report a blocked handoff and
-let the user choose another target/backend.
+Do not claim that `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or
+`pi_subagent` is available merely because the protocol supports it. If the
+runtime tool required by the harness-mandated backend is unavailable, report a
+blocked handoff and let the user choose another target/backend.
 
 The target choice may be recorded in the plan when known, but `delegate` must
 obtain it before creating a ready packet or starting current-session
@@ -223,7 +261,8 @@ target does not need a task file. Use stable filenames such as
      decision needed and stop.
    - When the target is `subagent`, resolve `execution_backend` from the
      current harness: `zcode_subagent` in a ZCode session; `codex_subagent`,
-     or `zcode_mcp` when its bridge is exposed, in a Codex session. Do not
+     or `zcode_mcp` when its bridge is exposed, in a Codex session; `pi_subagent`
+     when the native `subagent` tool is present in a Pi session. Do not
      offer a backend the current harness cannot serve.
      A current-session handoff leaves `execution_backend` unset or empty; never
      infer a backend from the word subagent.
@@ -327,7 +366,7 @@ created_at: <date>
 updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
-execution_backend: zcode_subagent | codex_subagent | zcode_mcp
+execution_backend: zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
 acceptance_scope: batch | node_and_batch
 attempt_policy:
   max_attempts: 2
@@ -398,7 +437,7 @@ forbidden_writes:
 
 - Orchestration mode: <batch|parallel_dag>
 - Execution target: `subagent`
-- Execution backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp`
+- Execution backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
 - Acceptance scope: <batch|node_and_batch>
 - Plan unit: <root for batch, or execution-plan-unit-id for parallel_dag>
 - Feature: <feature-id>
@@ -477,7 +516,7 @@ Answer in the user's language unless they request otherwise. Prefer:
 
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
-- execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp`
+- execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`
