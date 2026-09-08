@@ -16,7 +16,10 @@ Issue, or workspace task file. This mode does not implement code.
 - Keep every subagent task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
 - Preserve required capabilities and required skills from the source execution-plan node when the target platform supports them.
 - Preserve the shared contract fields defined in the router: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `plan_unit_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, and `evidence_required`.
-- Preserve `orchestration_mode` and `execution_target` in the packet. Do not reuse agent-brain's `execution_mode` task lane for the plan shape.
+- Preserve `orchestration_mode`, `execution_target`, and `execution_backend` in
+  the packet. `execution_backend` is required only when the target is
+  `subagent`; it must be `codex_subagent` or `zcode_mcp`. Do not reuse
+  agent-brain's `execution_mode` task lane for the plan shape or adapter.
 - Split parallel tasks only when the approved `parallel_dag` has clear dependencies and write boundaries.
 - Put only currently executable parallel tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
 - For a delegated `batch`, create one ready task for the whole goal rather than unrelated serial tasks.
@@ -56,6 +59,69 @@ The delegate mode has two execution targets:
   covers the complete goal and has one final acceptance scope. For
   `parallel_dag`, create one packet per runnable node and preserve the source
   dependencies.
+
+## Subagent Backend Matrix And Runtime Adapters
+
+`execution_backend` selects the runtime adapter after
+`execution_target=subagent` has been chosen. Both adapters execute the packet;
+neither adapter's success declaration is the final acceptance. The coordinator
+waits for an explicit `completed` result before running canonical acceptance.
+The protocols below describe supported integrations; they do not imply that
+the current environment exposes every named tool.
+
+| Backend | Dispatch | Long wait / status | One consolidated repair | Runtime boundary |
+|---|---|---|---|---|
+| `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, once, with the complete repair packet | Codex child implementation and internal verification |
+| `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` once on the same task with the complete repair packet | ZCode code implementation and repository tests when explicitly available |
+
+### `codex_subagent`
+
+- Call `multi_agent_v1__spawn_agent` once for a `batch` whole-goal packet, or
+  once per runnable `parallel_dag` node. The child receives one active goal and
+  must not return after an internal step.
+- Wait with `multi_agent_v1__wait_agent` for a bounded interval. Do not use
+  repeated status retrieval or busy polling while the agent is unchanged.
+- Require the final child response to include `completed`, `blocked`, or
+  `failed`, plus changed files, tests, deviations, blockers, and `attempt`.
+- Only after `completed`, run the coordinator's acceptance. If it fails, send
+  one complete consolidated repair through `multi_agent_v1__send_input` to the
+  same agent. A second failure or unresolved blocker goes to the user.
+
+### `zcode_mcp`
+
+- Call `mcp__zcode_codex__zcode_dispatch` with at least these mappings:
+  `objective`, `implementation_paths`, `workspace_path`,
+  `implementation_plan`, `acceptance`, `constraints`, `execution_mode`, and
+  `workspace_mode`. Preserve the plan's `orchestration_mode`,
+  `execution_target`, `execution_backend`, and linkage metadata in the
+  implementation plan or constraints payload.
+- Use `wait_ms` and the adapter's terminal status. Use `zcode_status`,
+  `zcode_messages`, and `zcode_diff` only when a terminal result needs
+  clarification or acceptance evidence is missing; do not turn these into
+  periodic polling.
+- Require a final `completed`, `blocked`, or `failed` response containing
+  changed files, tests, deviations, blockers, and `attempt`. A successful
+  ZCode response is still only an execution result, not coordinator acceptance.
+- After a failed coordinator acceptance, call `zcode_continue` at most once
+  with one complete consolidated repair packet. If ZCode requests permission
+  or user input through `zcode_respond`, do not auto-approve; return a user
+  blocker. Use `zcode_stop` only when the user or coordinator explicitly asks
+  to stop.
+- ZCode may implement code and run repository tests. Browser, desktop,
+  visual, and other host-only acceptance capabilities remain with the
+  coordinating session unless the adapter explicitly declares that capability
+  and the approved plan authorizes it.
+
+The adapter contract is:
+
+```text
+dispatch once → bounded wait → explicit terminal result → coordinator acceptance
+                         ↘ one consolidated repair → bounded wait → acceptance
+```
+
+Do not claim that `codex_subagent` or `zcode_mcp` is available merely because
+the protocol supports it. If the named runtime tool is unavailable, report a
+blocked handoff and let the user choose another target/backend.
 
 The target choice may be recorded in the plan when known, but `delegate` must
 obtain it before creating a ready packet or starting current-session
@@ -111,6 +177,10 @@ target does not need a task file. Use stable filenames such as
    - Read `orchestration_mode` and obtain `execution_target=current_session`
      or `execution_target=subagent`. If either decision is missing, return the
      decision needed and stop.
+   - When the target is `subagent`, obtain
+     `execution_backend=codex_subagent` or `execution_backend=zcode_mcp`.
+     A current-session handoff leaves `execution_backend` unset or empty; never
+     infer a backend from the word subagent.
    - If approval is ambiguous, write draft tasks only; do not place tasks in `ready`.
    - If a `parallel_dag` task depends on another task that is not already done,
      accepted, merged, or explicitly satisfied, do not place it in `ready`;
@@ -124,6 +194,9 @@ target does not need a task file. Use stable filenames such as
    - For `subagent` + `parallel_dag`, select runnable nodes from the source
      DAG. Preserve DAG unit IDs and dependencies; group tightly coupled nodes
      only when the mapping does not change dependency semantics.
+   - Dispatch each subagent packet through the selected backend adapter. If
+     the adapter runtime is unavailable, leave the handoff blocked rather than
+     claiming that dispatch occurred.
    - Keep shared contracts, schemas, migrations, generated artifacts, and
      cross-cutting config under a single writer.
    - If mapping would change the source DAG shape or acceptance semantics, hand
@@ -208,6 +281,7 @@ created_at: <date>
 updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
+execution_backend: codex_subagent | zcode_mcp
 acceptance_scope: batch | node_and_batch
 attempt_policy:
   max_attempts: 2
@@ -278,6 +352,7 @@ forbidden_writes:
 
 - Orchestration mode: <batch|parallel_dag>
 - Execution target: `subagent`
+- Execution backend: `codex_subagent` | `zcode_mcp`
 - Acceptance scope: <batch|node_and_batch>
 - Plan unit: <root for batch, or execution-plan-unit-id for parallel_dag>
 - Feature: <feature-id>
@@ -323,8 +398,9 @@ also performs final integration acceptance.
 ## Task Contract Bridge
 
 - If agent-brain is used, the Task Pack is the outer contract and its `acceptance` list is canonical.
-- Copy this packet's `orchestration_mode`, `execution_target`, `plan_id`,
-  `source_plan_sha256`, `base_commit`, `task_id`, `source_artifacts`,
+- Copy this packet's `orchestration_mode`, `execution_target`,
+  `execution_backend`, `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`,
+  `source_artifacts`,
   `source_hash`, `source_task_pack_sha256`, `acceptance_ids`,
   `required_skills`, and `plan_unit_id` into the Task Pack linkage fields.
 - Generate the compatibility Acceptance Pack from the Task Pack and retain its source hash; do not edit acceptance checks independently on the remote side.
@@ -355,6 +431,7 @@ Answer in the user's language unless they request otherwise. Prefer:
 
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
+- execution_backend: `codex_subagent` | `zcode_mcp`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`

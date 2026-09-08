@@ -38,9 +38,12 @@ The two high-level planning values are:
 
 The execution target is chosen during `delegate` unless the user has already
 specified it. It is recorded as `execution_target=current_session` or
-`execution_target=subagent` in the handoff. Do not use `execution_mode` for
-this choice: agent-brain reserves that field for the `auto|trivial|bounded|full`
-task lane, while `parallel_mode` remains the lower-level worktree taxonomy.
+`execution_target=subagent` in the handoff. A subagent target must also record
+`execution_backend=codex_subagent` or `execution_backend=zcode_mcp`; a
+current-session target leaves `execution_backend` unset or empty. Do not use
+`execution_mode` for this choice: agent-brain reserves that field for
+the `auto|trivial|bounded|full` task lane, while `parallel_mode` remains the
+lower-level worktree taxonomy.
 
 When the plan will be implemented through agent-brain or `$implement-plan`,
 materialize it on disk with `status: approved`; chat-only prose is not a
@@ -62,6 +65,8 @@ sources: []
 related: []
 base_commit: <git commit used for planning>
 orchestration_mode: batch | parallel_dag
+execution_target: pending | current_session | subagent
+execution_backend: pending | codex_subagent | zcode_mcp
 ```
 
 `source_plan_sha256` is the SHA-256 of the complete canonical plan file and is
@@ -104,9 +109,10 @@ Follow the shared document-artifact rules in the router SKILL.md; plans use `doc
 When document artifact mode is disabled or the config is absent, keep normal chat-output behavior only for research-only or discussion-only plans. For implementation-bound plans, the Implementation Handoff Ownership section above still requires a canonical plan artifact.
 
 Also include a `Remote Handoff Inputs` section identifying the selected
-execution target, the whole-goal contract for `batch`, or the node context,
-exclusions, verification commands, and acceptance criteria that `delegate`
-will need for `parallel_dag`.
+execution target and, for a subagent, the selected execution backend, plus the
+whole-goal contract for `batch`, or the node context, exclusions, verification
+commands, and acceptance criteria that `delegate` will need for
+`parallel_dag`.
 
 ## Planning Workflow
 
@@ -206,10 +212,12 @@ Avoid `parallel_dag` when:
 
 When in doubt, use `batch` and let the actor perform internal serial steps.
 
-Never delegate work that requires runtime-reserved tooling. Browser control,
-desktop control, and visual acceptance gates are main-agent-only in runtimes
-such as ZCode — a delegated actor cannot load or use them. Assign such checks
-to the current-session lead and record the required capability.
+Do not delegate work that requires host-only runtime tooling unless the selected
+adapter explicitly declares and the approved plan authorizes that capability.
+Browser control, desktop control, and visual acceptance gates remain with the
+coordinating session by default. Code implementation and repository tests may
+be delegated to `codex_subagent` or `zcode_mcp` when that adapter is actually
+available; record unavailable runtime tools as a blocker.
 
 ## Output Format
 
@@ -238,6 +246,7 @@ appropriate:
 
 - orchestration_mode: batch | parallel_dag
 - execution_target: pending | current_session | subagent
+- execution_backend: pending | codex_subagent | zcode_mcp
 - user_approval: <pending|approved>
 
 ## Plan Artifact
@@ -264,7 +273,7 @@ appropriate:
 
 ### Node Contract: U1
 
-- Contract linkage: plan_id / source_plan_sha256 / base_commit / task_id / source_artifacts / source_hash / acceptance_ids
+- Contract linkage: plan_id / source_plan_sha256 / base_commit / task_id / source_artifacts / source_hash / acceptance_ids / orchestration_mode / execution_target / execution_backend
 - Required capabilities: <reasoning, repository access, browser, domain knowledge, or other needs>
 - Required skills: <skill names or "None">
 - Write ownership: <allowed paths, modules, contracts, or "Read only">

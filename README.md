@@ -145,7 +145,7 @@ related: {}
 - 轻量调研：`research`（brief）→ `write-prd` 或 `write-trd`。
 - 正式需求分析：`research`（brief，可选）→ `research`（deep）→ `write-prd` → `prototype-ui`（UI 假设未验证时）→ `write-trd`。
 - 多模型交叉估时：`research`（deep）→ 三个或更多 Reviewer 分别运行 `delivery-estimation`（review）→ Research Lead 运行 `delivery-estimation`（synthesis）。
-- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd，正式交接时）→ `write-trd` → `delivery-readiness`（trd_to_plan，正式交接时）→ `execution-delivery`（先评估并行，再生成 `batch` 或 `parallel_dag` plan）→ `delivery-readiness`（plan_to_build，进入实现前）→ `execution-delivery`（delegate，选择当前会话或子智能体）→ `implement-plan` → 整体验收/集成验收 → `prepare-commit` → `release-delivery`（获得对应审批后）。readiness 门是显式阶段门，非正式小改动不进 gate。
+- 复杂需求交付：`write-prd` → `delivery-readiness`（prd_to_trd，正式交接时）→ `write-trd` → `delivery-readiness`（trd_to_plan，正式交接时）→ `execution-delivery`（先评估并行，再生成 `batch` 或 `parallel_dag` plan）→ `delivery-readiness`（plan_to_build，进入实现前）→ `execution-delivery`（delegate，选择当前会话或子智能体；子智能体再选 `codex_subagent` 或 `zcode_mcp`）→ `implement-plan` → 整体验收/集成验收 → `prepare-commit` → `release-delivery`（获得对应审批后）。readiness 门是显式阶段门，非正式小改动不进 gate。
 - 简单改动：直接使用对应专项 Skill 或 `implement-plan` 的轻量模式，完成聚焦验证后进入 `prepare-commit`，不强制创建 PRD、TRD 或多 Agent DAG。
 
 ## Multi-Agent Orchestration
@@ -171,8 +171,9 @@ related: {}
   通过的命令只回报状态/计数，完整 stdout/stderr 留在日志中，失败才回报尾部诊断。
   Context Pack、Experience episode、handoff 和证明流程完整性的文档按需读取，
   不作为每轮默认上下文。
-- `execution-delivery`（plan 模式）应携带 `orchestration_mode`、`plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`。
-- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `execution_target`、`required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
+- `execution-delivery`（plan 模式）应携带 `orchestration_mode`、`plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`；执行目标和 backend 在交接时补齐。
+- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `execution_target`；当目标为 `subagent` 时还必须选择 `execution_backend=codex_subagent|zcode_mcp`，同时传递 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离。
+- 两个 subagent backend 都是执行适配器：Codex 使用 `multi_agent_v1__spawn_agent` / `multi_agent_v1__wait_agent`，ZCode 使用 `mcp__zcode_codex__zcode_dispatch` 及其状态/继续接口；运行时工具未提供时必须报告阻塞，不得假装已委派。
 - 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。
 - 状态推进规则：`ready` 只表示依赖满足且可领取；`done` 只表示实现分支完成；只有 Acceptance Pack source hash 匹配且 evidence `overall=pass` 才能进入 `accepted`，下游任务据此 promotion。`skipped` 必须由用户拥有 residual risk，不能自动 promotion。
 - 多 Agent 并发前必须检查规范化后的 `write_ownership`、mutex、branch/worktree 和 base commit；共享 contract/schema/migration/generated artifact 默认单写者。

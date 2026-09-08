@@ -6,7 +6,8 @@ description: Execute an approved whole-goal batch plan or an assigned parallel-D
 # Implement Plan
 
 Use this skill to execute an approved implementation plan without drifting from
-scope. Consume the plan's `orchestration_mode` and `execution_target`; do not
+scope. Consume and preserve the plan's `orchestration_mode`,
+`execution_target`, and `execution_backend`; do not
 re-plan, create a DAG, or silently change who executes the work.
 
 ## Core Principles
@@ -68,6 +69,8 @@ For an agent-brain Task Pack, verify all of these values before Build:
 3. `plan_id`, `plan_unit_id`, and `base_commit` match the plan and the assigned unit.
 4. The plan status is `approved`, or the user explicitly approved it in the current turn.
 5. The Task Pack's `allowed_paths`, acceptance checks, and write ownership are a bounded subset of the plan unit or whole-goal root.
+6. If `execution_target=subagent`, `execution_backend` is present and is either
+   `codex_subagent` or `zcode_mcp`; never switch the selected adapter.
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
 
@@ -116,12 +119,14 @@ whole-batch or node implementation and verification. Run the brain validators
 and acceptance commands named by the Task Pack; do not recreate the Task Pack
 or replace its evidence with a prose summary. Keep the shared linkage fields
 (`plan_id`, `plan_unit_id`, `source_plan_sha256`, `base_commit`,
-`orchestration_mode`, and readiness identity) unchanged.
+`orchestration_mode`, `execution_target`, `execution_backend`, and readiness
+identity) unchanged.
 
 ## Parallelism And Worktree Decision
 
-Use the plan's high-level `orchestration_mode` first. `parallel_mode` remains
-the lower-level worktree and write-isolation contract:
+Use the plan's high-level `orchestration_mode` first. `execution_backend`
+identifies the subagent adapter and is not a worktree setting. `parallel_mode`
+remains the lower-level worktree and write-isolation contract:
 
 1. For `batch`, use one actor and one serial implementation context. Internal
    implementation steps may be ordered and verified, but they are not separate
@@ -200,6 +205,7 @@ If no test is practical, state the manual verification path and residual risk be
 
 1. Confirm inputs.
    - Identify the source plan, `orchestration_mode`, `execution_target`,
+     `execution_backend`,
      whole-goal or assigned-node scope, expected behavior, verification mode,
      and done criteria.
    - If no explicit input is provided, ask for the approved plan or assignment
@@ -299,6 +305,7 @@ Answer in the user's language unless they request otherwise. Use concise progres
 - status: `completed` | `blocked` | `failed`
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
+- execution_backend: `codex_subagent` | `zcode_mcp`
 - attempt: `1` | `2`
 
 ## Implemented Scope

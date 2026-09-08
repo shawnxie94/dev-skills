@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Plan"
   short_description: "Execute an approved batch or DAG assignment"
-  default_prompt: "Use $implement-plan only after verifying an approved canonical execution-plan artifact and its source_plan_sha256 linkage; execute the selected whole-goal batch or assigned parallel-DAG node without changing the orchestration strategy."
+  default_prompt: "Use $implement-plan only after verifying an approved canonical execution-plan artifact and its source_plan_sha256 linkage; preserve orchestration_mode, execution_target, and execution_backend, then execute the selected whole-goal batch or assigned parallel-DAG node without changing the orchestration strategy."
