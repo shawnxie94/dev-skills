@@ -1,6 +1,6 @@
 ---
 name: prototype-ui
-description: "Turn a settled PRD or product scope into a complete design-stage handoff: visual direction, clickable HTML prototype, and UI specification for the TRD and implementation. Use when product requirements are documented but layout, flow, states, visual direction, or interactions are still unverified assumptions, or when the user asks for a prototype, wireframe, mockup, 原型, 线框, or UI design before technical design. Keep the workflow repository-bound; use Huashu, OpenDesign, or Figma only as optional external providers."
+description: "Turn a settled PRD or product scope into a design-stage handoff: visual direction, clickable HTML prototype, and UI specification before the TRD. Use when requirements are documented but layout, flow, states, or visual direction are still unverified, or the user asks for a prototype, wireframe, mockup, 原型, 线框, or UI design."
 ---
 
 # Prototype UI

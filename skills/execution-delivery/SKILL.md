@@ -1,6 +1,6 @@
 ---
 name: execution-delivery
-description: Turn a settled TRD, technical design, or implementation scope into an executable delivery contract, in two modes. `plan` (default) writes the canonical execution plan — implementation DAG, critical path, risk-first sequencing, actor assignment, write ownership, verification checkpoints, and plan hash — without writing code; use for 执行计划, 实施计划, 拆任务, 开发计划, 实施 DAG. `delegate` converts an approved plan or DAG node into bounded handoff task packets for a remote machine, remote Codex, managed-agent issue, squad child issue, GitHub Issue, or task file; use for 远端交接, 远程任务, 委派任务, 任务包. Delegate only after the plan is approved; keep plan and delegate artifacts linked by shared contract fields rather than duplicated.
+description: Turn a settled TRD, technical design, or implementation scope into an executable delivery contract, in two modes. `plan` (default) writes the canonical execution plan — DAG, critical path, risk-first sequencing, verification checkpoints, no code（执行计划、实施计划、拆任务、开发计划）; `delegate` converts an approved plan or DAG node into bounded handoff task packets for remote workers, agent issues, or task files（远端交接、远程任务、委派任务、任务包）.
 ---
 
 # Execution Delivery

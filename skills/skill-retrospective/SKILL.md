@@ -1,6 +1,6 @@
 ---
 name: skill-retrospective
-description: Improve existing skills based on real task feedback. Use when the user asks to review how a skill performed, update a skill from usage feedback, refine skill triggers, adjust handoff rules, fix an over-heavy or under-specified workflow, incorporate lessons from a real task, evolve this repository's skills after using them, or uses Chinese requests such as 技能复盘, 优化技能, 改进 skill, 更新 skill. Focus on identifying concrete skill gaps, making minimal targeted edits, preserving lightweight scope, validating changed skills, and preparing the change for commit.
+description: Improve existing skills based on real task feedback. Use when the user asks to review how a skill performed, refine skill triggers or handoff rules, fix an over-heavy or under-specified workflow, or incorporate lessons from a real task（技能复盘、优化技能、改进 skill、更新 skill）.
 ---
 
 # Skill Retrospective

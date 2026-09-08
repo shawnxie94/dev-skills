@@ -1,6 +1,6 @@
 ---
 name: research
-description: Turn rough ideas or formal requirements into research inputs before requirements analysis, technical design, or delivery estimation. Two modes. `brief` is the default for early idea exploration, industry practice, blind spots, technical directions, and low-cost reversible decisions. `deep` is for formal, multi-source requirement research that must freeze a decision-ready Requirement Research Packet with traceable evidence and estimation work items. Use when the user asks to research an idea or requirement, explore options, identify blind spots, or uses Chinese requests such as 调研, 研究一下, 摸底, 找盲点, 深度需求调研, 正式需求调研, 需求调研包, 估时输入. Default to `brief`; escalate to `deep` only when the requirement spans business workflows, system boundaries, integrations, unfamiliar domains, compliance, or material delivery risk, or the output must feed formal estimation. Load only the selected mode's reference.
+description: Turn rough ideas or formal requirements into research inputs before requirements analysis, technical design, or delivery estimation. `brief` (default) explores early ideas, industry practice, blind spots, and low-cost reversible decisions; `deep` freezes a decision-ready research packet with traceable evidence for formal estimation. Use for 调研、研究一下、摸底、找盲点、深度需求调研、需求调研包、估时输入.
 ---
 
 # Research

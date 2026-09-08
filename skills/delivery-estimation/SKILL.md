@@ -1,6 +1,6 @@
 ---
 name: delivery-estimation
-description: Estimate delivery effort in person-months from a frozen requirement packet or settled scope, in two modes. `review` (default) is one independent Estimation Reviewer producing a sealed, machine-validatable optimistic/most-likely/pessimistic PERT estimate from the shared rubric; use for 独立估时, 人月估算, 交付估时, 交叉估时. `synthesis` is a Research Lead comparing three or more sealed estimates, locating divergence, and producing a consensus report; use for 综合估时, 估时评审, 估时汇总, 离散度分析. Reviewers stay in review mode and must not read synthesis logic, other estimates, or budget anchors during the first pass. Enforce identical frozen inputs, stable work item IDs, reuse-before-custom-build, and reproducible output.
+description: Estimate delivery effort in person-months from a frozen requirement packet or settled scope. Two modes — `review` (default), one independent sealed PERT estimate（独立估时、人月估算、交付估时、交叉估时）; `synthesis`, consolidate 3+ sealed estimates into a consensus report（综合估时、估时评审、估时汇总、离散度分析）.
 ---
 
 # Delivery Estimation

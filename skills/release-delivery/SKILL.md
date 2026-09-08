@@ -1,6 +1,6 @@
 ---
 name: release-delivery
-description: Safely plan, execute, verify, observe, and roll back project releases through a deterministic project-profile release manifest and runbook. Use when the user asks to release, deploy, publish to staging or production, merge and release an accepted candidate, verify a deployment, or roll back, including Chinese requests such as 发布, 部署, 上线, 发版, 生产发布, 灰度, 回滚. Requires candidate identity, Quality Gate evidence, configured approvals, smoke checks, and rollback readiness; never guesses a runbook or embeds project credentials.
+description: Safely plan, execute, verify, observe, and roll back project releases through a project-profile release manifest and runbook. Use when the user asks to release, deploy, publish to staging or production, verify a deployment, or roll back（发布、部署、上线、发版、生产发布、灰度、回滚）.
 ---
 
 # Release Delivery

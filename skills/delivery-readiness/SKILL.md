@@ -1,6 +1,6 @@
 ---
 name: delivery-readiness
-description: Assess whether a delivery artifact is complete and safe to hand off across PRD, TRD, execution plan, implementation, verification, and release stages. Use when a team is about to cross a formal delivery-stage handoff, when PRD/TRD/plan content may be incomplete or contradictory, when a delivery is plan-linked or batch-linked, on high-risk releases or migrations, or when a change needs a repeatable assess → repair → reassess loop with traceable blockers, hashes, and evidence. Do not use for small internal changes, informal handoffs, or as an automatic pre-step before every stage; invoke it at explicit stage crossings or on request.
+description: Assess whether a delivery artifact is complete and safe to hand off across PRD, TRD, execution plan, implementation, verification, and release stages. Use at formal stage handoffs, for high-risk releases or migrations, or when content may be incomplete or contradictory. Not for small internal changes, informal handoffs, or as an automatic pre-step before every stage.
 ---
 
 # Delivery Readiness

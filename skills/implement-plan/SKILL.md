@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implement an approved execution plan one verified step at a time, delegating node work to subagents of the current agent. Use when the user asks to implement, execute, carry out, or continue from an approved execution plan, implementation DAG, task plan, or delegated node assignment, or uses Chinese requests such as 按计划实现, 开始落地, 继续实现. For small, single-file, already-specified changes with no Task Pack or plan unit, use the light mode instead of the plan preflight. Focus on verification-first development, TDD/regression/characterization test selection, scoped edits, node write-ownership enforcement, subagent delegation with merge review, node-level validation, integration validation, progress updates, and final handoff to prepare-commit.
+description: Implement an approved execution plan one verified step at a time, delegating node work to subagents of the current agent. Use when the user asks to implement, execute, carry out, or continue from an approved execution plan, implementation DAG, task plan, or delegated node assignment（按计划实现、开始落地、继续实现）.
 ---
 
 # Implement Plan
