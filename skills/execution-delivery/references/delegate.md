@@ -18,8 +18,10 @@ Issue, or workspace task file. This mode does not implement code.
 - Preserve the shared contract fields defined in the router: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `plan_unit_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, and `evidence_required`.
 - Preserve `orchestration_mode`, `execution_target`, and `execution_backend` in
   the packet. `execution_backend` is required only when the target is
-  `subagent`; it must be `codex_subagent` or `zcode_mcp`. Do not reuse
-  agent-brain's `execution_mode` task lane for the plan shape or adapter.
+  `subagent`; it must be `zcode_subagent`, `codex_subagent`, or `zcode_mcp`,
+  resolved by the current harness (see the backend matrix), never picked by
+  preference. Do not reuse agent-brain's `execution_mode` task lane for the
+  plan shape or adapter.
 - Split parallel tasks only when the approved `parallel_dag` has clear dependencies and write boundaries.
 - Put only currently executable parallel tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
 - For a delegated `batch`, create one ready task for the whole goal rather than unrelated serial tasks.
@@ -63,18 +65,55 @@ The delegate mode has two execution targets:
 ## Subagent Backend Matrix And Runtime Adapters
 
 `execution_backend` selects the runtime adapter after
-`execution_target=subagent` has been chosen. Both adapters execute the packet;
-neither adapter's success declaration is the final acceptance. The coordinator
-waits for an explicit `completed` result before running canonical acceptance.
-The protocols below describe supported integrations; they do not imply that
-the current environment exposes every named tool.
+`execution_target=subagent` has been chosen. The backend is decided by the
+current harness, not by preference:
+
+- ZCode session (native `Agent` tool present): `execution_backend=zcode_subagent`. Never spawn Codex children from ZCode (`codex_subagent` is unavailable here), and never wrap ZCode subagents in MCP calls (`zcode_mcp` is a cross-harness bridge, not in-session delegation).
+- Codex session (`multi_agent_v1` tools present): `execution_backend=codex_subagent`, or `zcode_mcp` only when the ZCode MCP bridge tools are actually exposed in that session.
+- Neither tool family is available: report a blocked handoff.
+
+All adapters execute the packet; no adapter's success declaration is the final
+acceptance. The coordinator waits for an explicit `completed` result before
+running canonical acceptance. The protocols below describe supported
+integrations; they do not imply that the current environment exposes every
+named tool.
 
 | Backend | Dispatch | Long wait / status | One consolidated repair | Runtime boundary |
 |---|---|---|---|---|
+| `zcode_subagent` | Native `Agent` tool, one call per packet with a self-contained prompt | Foreground call blocks until the final message; `run_in_background` + `TaskOutput` (blocking) for long nodes; no polling | `SendMessage` to the same agent, once, with the complete repair packet | ZCode native child implementation and tests |
 | `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, once, with the complete repair packet | Codex child implementation and internal verification |
 | `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` once on the same task with the complete repair packet | ZCode code implementation and repository tests when explicitly available |
 
+### `zcode_subagent`
+
+The default and only backend inside a ZCode session. ZCode subagents spawn
+natively through the `Agent` tool; no MCP, no Codex.
+
+- Call `Agent` once per packet with a self-contained prompt: the complete task
+  packet or its file path plus a one-paragraph objective, the canonical plan
+  path, and every command the child must run. A fresh subagent starts with no
+  conversation context, so the prompt must not rely on session history or
+  shorthand established earlier.
+- Pick `subagent_type` by write ownership: `general-purpose` (or another type
+  with write access) for nodes that write code or run state-changing commands;
+  read-only types such as `Explore` only for analysis-only nodes.
+- A foreground call blocks until the subagent returns its final message; that
+  message is the terminal result. For concurrent `parallel_dag` dispatch,
+  issue multiple `Agent` calls in one message so they run in parallel. For
+  long-running nodes, set `run_in_background=true` and wait via `TaskOutput`
+  (blocking); never busy-poll an unchanged agent.
+- Require the final message to state `completed`, `blocked`, or `failed`,
+  plus changed files, tests, deviations, blockers, and `attempt`. The
+  subagent's final message is visible only to the coordinator, not to the
+  user — relay the outcome after acceptance.
+- Only after `completed`, run the coordinator's acceptance. If it fails, send
+  one complete consolidated repair packet to the same agent via `SendMessage`
+  (the agent resumes in the background with its prior context). A second
+  failure or unresolved blocker goes to the user.
+
 ### `codex_subagent`
+
+Codex sessions only; unavailable from ZCode.
 
 - Call `multi_agent_v1__spawn_agent` once for a `batch` whole-goal packet, or
   once per runnable `parallel_dag` node. The child receives one active goal and
@@ -88,6 +127,10 @@ the current environment exposes every named tool.
   same agent. A second failure or unresolved blocker goes to the user.
 
 ### `zcode_mcp`
+
+A cross-harness bridge only: the coordinating session is Codex and the ZCode
+MCP bridge tools (`zcode_dispatch` etc.) are exposed there. It is not how a
+ZCode session delegates — inside ZCode use `zcode_subagent`.
 
 - Call `mcp__zcode_codex__zcode_dispatch` with at least these mappings:
   `objective`, `implementation_paths`, `workspace_path`,
@@ -119,9 +162,10 @@ dispatch once → bounded wait → explicit terminal result → coordinator acce
                          ↘ one consolidated repair → bounded wait → acceptance
 ```
 
-Do not claim that `codex_subagent` or `zcode_mcp` is available merely because
-the protocol supports it. If the named runtime tool is unavailable, report a
-blocked handoff and let the user choose another target/backend.
+Do not claim that `zcode_subagent`, `codex_subagent`, or `zcode_mcp` is
+available merely because the protocol supports it. If the runtime tool required
+by the harness-mandated backend is unavailable, report a blocked handoff and
+let the user choose another target/backend.
 
 The target choice may be recorded in the plan when known, but `delegate` must
 obtain it before creating a ready packet or starting current-session
@@ -177,8 +221,10 @@ target does not need a task file. Use stable filenames such as
    - Read `orchestration_mode` and obtain `execution_target=current_session`
      or `execution_target=subagent`. If either decision is missing, return the
      decision needed and stop.
-   - When the target is `subagent`, obtain
-     `execution_backend=codex_subagent` or `execution_backend=zcode_mcp`.
+   - When the target is `subagent`, resolve `execution_backend` from the
+     current harness: `zcode_subagent` in a ZCode session; `codex_subagent`,
+     or `zcode_mcp` when its bridge is exposed, in a Codex session. Do not
+     offer a backend the current harness cannot serve.
      A current-session handoff leaves `execution_backend` unset or empty; never
      infer a backend from the word subagent.
    - If approval is ambiguous, write draft tasks only; do not place tasks in `ready`.
@@ -281,7 +327,7 @@ created_at: <date>
 updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
-execution_backend: codex_subagent | zcode_mcp
+execution_backend: zcode_subagent | codex_subagent | zcode_mcp
 acceptance_scope: batch | node_and_batch
 attempt_policy:
   max_attempts: 2
@@ -352,7 +398,7 @@ forbidden_writes:
 
 - Orchestration mode: <batch|parallel_dag>
 - Execution target: `subagent`
-- Execution backend: `codex_subagent` | `zcode_mcp`
+- Execution backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp`
 - Acceptance scope: <batch|node_and_batch>
 - Plan unit: <root for batch, or execution-plan-unit-id for parallel_dag>
 - Feature: <feature-id>
@@ -409,7 +455,7 @@ also performs final integration acceptance.
 
 ## Blocking Conditions
 
-- <When remote Codex should stop and report back>
+- <When the subagent should stop and report back>
 
 ## Delivery And Feedback
 
@@ -431,7 +477,7 @@ Answer in the user's language unless they request otherwise. Prefer:
 
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
-- execution_backend: `codex_subagent` | `zcode_mcp`
+- execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`

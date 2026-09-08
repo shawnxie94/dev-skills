@@ -39,7 +39,9 @@ The two high-level planning values are:
 The execution target is chosen during `delegate` unless the user has already
 specified it. It is recorded as `execution_target=current_session` or
 `execution_target=subagent` in the handoff. A subagent target must also record
-`execution_backend=codex_subagent` or `execution_backend=zcode_mcp`; a
+`execution_backend`, resolved at delegate time by the current harness
+(`zcode_subagent` in a ZCode session; `codex_subagent`, or `zcode_mcp` when
+its bridge is exposed, in a Codex session); a
 current-session target leaves `execution_backend` unset or empty. Do not use
 `execution_mode` for this choice: agent-brain reserves that field for
 the `auto|trivial|bounded|full` task lane, while `parallel_mode` remains the
@@ -66,7 +68,7 @@ related: []
 base_commit: <git commit used for planning>
 orchestration_mode: batch | parallel_dag
 execution_target: pending | current_session | subagent
-execution_backend: pending | codex_subagent | zcode_mcp
+execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp
 ```
 
 `source_plan_sha256` is the SHA-256 of the complete canonical plan file and is
@@ -216,7 +218,8 @@ Do not delegate work that requires host-only runtime tooling unless the selected
 adapter explicitly declares and the approved plan authorizes that capability.
 Browser control, desktop control, and visual acceptance gates remain with the
 coordinating session by default. Code implementation and repository tests may
-be delegated to `codex_subagent` or `zcode_mcp` when that adapter is actually
+be delegated to the harness-mandated subagent adapter (`zcode_subagent`,
+`codex_subagent`, or `zcode_mcp`) when that adapter is actually
 available; record unavailable runtime tools as a blocker.
 
 ## Output Format
@@ -246,7 +249,7 @@ appropriate:
 
 - orchestration_mode: batch | parallel_dag
 - execution_target: pending | current_session | subagent
-- execution_backend: pending | codex_subagent | zcode_mcp
+- execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp
 - user_approval: <pending|approved>
 
 ## Plan Artifact
