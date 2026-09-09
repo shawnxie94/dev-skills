@@ -1,6 +1,6 @@
 ---
 name: subagent-orchestration
-description: Choose, dispatch, observe, and recover delegated work across Pi/Nico, Codex, ZCode, and other runtimes. Defines logical subagent roles, context-offload rules, lifecycle handling, runtime adapters, and bounded handoff contracts; does not implement the delegated task itself（子代理编排、角色选择、运行时适配、上下文卸载、恢复策略）.
+description: Choose, dispatch, observe, and recover delegated work across Pi/Nico, Codex, ZCode, and other runtimes（子代理编排、角色选择、运行时适配、上下文卸载、恢复策略）. Owns roles, context-offload, runtime adapters, and handoff contracts; does not implement the task itself.
 ---
 
 # Subagent Orchestration

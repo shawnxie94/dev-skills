@@ -1,6 +1,6 @@
 ---
 name: write-trd
-description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD). Use when the user asks to write a TRD or technical design（技术方案、技术设计文档）, or to convert product requirements into implementation-ready technical design inputs.
+description: Turn a PRD, settled product requirements, or feature scope into a concise Technical Requirements / Technical Design Document (TRD)（技术方案、技术设计文档）. Use when the user asks to write a TRD or technical design, or to convert product requirements into implementation-ready design inputs.
 ---
 
 # Write TRD

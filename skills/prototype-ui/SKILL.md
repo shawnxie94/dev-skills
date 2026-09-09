@@ -1,6 +1,6 @@
 ---
 name: prototype-ui
-description: "Turn a settled PRD or product scope into a design-stage handoff: visual direction, clickable HTML prototype, and UI specification before the TRD. Use when requirements are documented but layout, flow, states, or visual direction are still unverified, or the user asks for a prototype, wireframe, mockup, 原型, 线框, or UI design."
+description: Turn a settled PRD or product scope into a design-stage handoff — visual direction, clickable HTML prototype, and UI spec before the TRD. Use when layout, flow, states, or visual direction are still unverified（原型、线框、wireframe、mockup、UI 设计）.
 ---
 
 # Prototype UI

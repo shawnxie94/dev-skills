@@ -1,6 +1,6 @@
 ---
 name: write-prd
-description: Turn already-discussed or mostly-settled requirements into a concise Product Requirements Document (PRD). Use when the user asks to write, draft, refine, or formalize a PRD（需求文档、产品需求文档）, or to convert research notes, requirement discussions, or feature ideas into a structured requirements artifact.
+description: Turn already-discussed or mostly-settled requirements into a concise Product Requirements Document (PRD)（需求文档、产品需求文档）. Use when the user asks to write, draft, refine, or formalize a PRD, or to turn research notes or feature ideas into a structured requirements artifact.
 ---
 
 # Write PRD

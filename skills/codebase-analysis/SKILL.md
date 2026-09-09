@@ -1,6 +1,6 @@
 ---
 name: codebase-analysis
-description: Understand a repository or analyze the blast radius of a concrete change before design, planning, debugging, implementation, or commit — or produce a study-grade reading of how it works and why. Three mutually exclusive modes. `orientation` maps an unfamiliar or partially-known repository — tech stack, run/test commands, modules, entry points, data flow, risk boundaries; use for 了解代码库, 代码库导向, 梳理架构, 找入口, 怎么跑. `deep-dive` produces a study-grade architectural walkthrough — core loops, module design, design philosophy — archived as a durable learning note; use for 深入讲解, 深度解读, 深入剖析, deep-dive, core loop walkthrough, 写深度笔记. `impact` analyzes what a proposed change, current diff, refactor, API/schema/config/dependency change, or bug fix affects — modules, contracts, data, config, tests, compatibility risks; use for 影响面, 改动范围, 影响分析, 会不会影响. Load exactly one mode per turn.
+description: Map a repository, read it deeply, or assess what a concrete change affects. Three mutually exclusive modes, one per turn — `orientation`（了解代码库、梳理架构、找入口、怎么跑）, `deep-dive`（深入讲解、深度解读、deep-dive、写深度笔记）, `impact`（影响面、改动范围、影响分析）. Use before design, planning, debugging, implementation, or commit.
 ---
 
 # Codebase Analysis

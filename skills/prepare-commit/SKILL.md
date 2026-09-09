@@ -1,6 +1,6 @@
 ---
 name: prepare-commit
-description: Review and prepare pending code changes before commit, merge, or PR creation. Use only for code diffs — reviewing pending or staged changes, pre-commit checks, or preparing/organizing/creating a commit ("review my changes", "pre-commit check", 整理提交、提交代码、帮我 commit). Not for reviewing designs, documents, plans, PRD/TRD, or other non-code artifacts.
+description: Review and prepare pending code changes before commit, merge, or PR creation（整理提交、提交代码、帮我 commit）. Use only for code diffs — pending or staged changes, pre-commit checks, commit preparation. Not for reviewing designs, documents, plans, or PRD/TRD.
 ---
 
 # Prepare Commit

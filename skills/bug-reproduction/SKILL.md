@@ -1,6 +1,6 @@
 ---
 name: bug-reproduction
-description: Reproduce and characterize a bug before attempting a fix. Use when the user reports broken behavior — failing page, API, command, test, CI job, local service, data refresh, cache issue, regression, flaky behavior — or asks why something is not working (复现 bug、排查问题、为什么挂了、定位故障). Minimal repro and evidence first, fix direction before editing code.
+description: Reproduce and characterize a bug before attempting a fix. Use when the user reports broken behavior (failing page, API, command, test, CI, service, regression, flaky behavior) or asks why something is not working（复现 bug、排查问题、为什么挂了、定位故障）. Evidence before editing code.
 ---
 
 # Bug Reproduction

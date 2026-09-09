@@ -1,6 +1,6 @@
 ---
 name: research
-description: Turn rough ideas or formal requirements into research inputs before requirements analysis, technical design, or delivery estimation. `brief` (default) explores early ideas, industry practice, blind spots, and low-cost reversible decisions; `deep` freezes a decision-ready research packet with traceable evidence for formal estimation. Use for 调研、研究一下、摸底、找盲点、深度需求调研、需求调研包、估时输入.
+description: Turn rough ideas or formal requirements into research inputs before requirements analysis, technical design, or estimation. `brief` (default) explores ideas, practice, and blind spots; `deep` freezes a decision-ready evidence packet（调研、研究一下、摸底、找盲点、深度需求调研、需求调研包、估时输入）.
 ---
 
 # Research

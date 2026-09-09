@@ -13,6 +13,11 @@ SKILLS_DIR = ROOT / "skills"
 README = ROOT / "README.md"
 EXTERNAL_SKILLS = {"skill-installer"}
 
+# Descriptions are the only part of a skill that is always loaded, so they must
+# stay a trigger surface (purpose + modes + trigger phrases), not a summary of
+# the body. The mode tables and rules in SKILL.md are the single source of truth.
+MAX_DESCRIPTION_CHARS = 320
+
 
 def frontmatter(path: Path) -> dict[str, str]:
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -50,8 +55,15 @@ def main() -> int:
             errors.append(
                 f"{name}: frontmatter name is {metadata.get('name')!r}, expected {name!r}"
             )
-        if not metadata.get("description"):
+        description = metadata.get("description", "")
+        if not description:
             errors.append(f"{name}: frontmatter description is missing")
+        elif len(description) > MAX_DESCRIPTION_CHARS:
+            errors.append(
+                f"{name}: frontmatter description is {len(description)} chars, "
+                f"over the {MAX_DESCRIPTION_CHARS}-char cap; keep triggers, drop "
+                "content already covered by SKILL.md"
+            )
 
         if not agent_file.is_file():
             errors.append(f"{name}: missing agents/openai.yaml")

@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Execute an approved whole-goal batch plan or an assigned parallel-DAG node without changing the selected execution strategy. Use when the user asks to implement, execute, carry out, or continue from an approved execution plan, batch goal, implementation DAG, or delegated task assignment（按计划实现、开始落地、继续实现）.
+description: Execute an approved batch plan or an assigned parallel-DAG node without changing the selected execution strategy（按计划实现、开始落地、继续实现）. Use for an approved execution plan, batch goal, implementation DAG, or delegated task assignment; small already-specified changes use its light mode.
 ---
 
 # Implement Plan

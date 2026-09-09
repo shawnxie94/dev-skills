@@ -1,6 +1,6 @@
 ---
 name: delivery-estimation
-description: Estimate delivery effort in person-months from a frozen requirement packet or settled scope. Two modes — `review` (default), one independent sealed PERT estimate（独立估时、人月估算、交付估时、交叉估时）; `synthesis`, consolidate 3+ sealed estimates into a consensus report（综合估时、估时评审、估时汇总、离散度分析）.
+description: Estimate delivery effort in person-months from a frozen packet or settled scope. `review` (default) is one independent sealed PERT estimate（独立估时、人月估算、交付估时、交叉估时）; `synthesis` consolidates 3+ sealed estimates into a consensus report（综合估时、估时评审、估时汇总、离散度分析）.
 ---
 
 # Delivery Estimation

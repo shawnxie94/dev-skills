@@ -1,6 +1,6 @@
 ---
 name: execution-delivery
-description: Turn a settled TRD, technical design, or implementation scope into an executable delivery contract, in two modes. `plan` (default) first assesses whether parallel execution is worthwhile, then writes either a whole-goal batch plan or a parallel DAG plan — no code（执行计划、实施计划、拆任务、开发计划）; `delegate` routes an approved plan to the current session or a subagent and produces bounded handoff packets when needed（远端交接、远程任务、委派任务、任务包）.
+description: Turn a settled TRD or implementation scope into an executable delivery contract. `plan` (default) assesses parallelism, then writes a batch or parallel-DAG plan, no code（执行计划、实施计划、拆任务、开发计划）; `delegate` routes an approved plan to the current session or a subagent（远端交接、远程任务、委派任务、任务包）.
 ---
 
 # Execution Delivery
