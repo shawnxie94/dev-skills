@@ -5,6 +5,7 @@
 #   ./install.sh                 install for Codex (idempotent, default)
 #   ./install.sh --target claude install for Claude Code
 #   ./install.sh --target zcode  install for ZCode
+#   ./install.sh --target pi     install for Pi
 #   ./install.sh --uninstall     remove dev-skills symlinks (including stale ones)
 #   ./install.sh --dry-run       show what would change, change nothing
 #   ./install.sh -h | --help     show this help
@@ -14,6 +15,7 @@
 #   CODEX_HOME         target Codex home (default: $HOME/.codex)
 #   CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
 #   ZCODE_HOME         target ZCode home (default: $HOME/.zcode)
+#   PI_HOME            target Pi home (default: $HOME/.pi)
 set -euo pipefail
 
 # ---------- locate this script (works through symlinks) ----------
@@ -31,6 +33,7 @@ TARGET="${DEV_SKILLS_TARGET:-codex}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 ZCODE_HOME="${ZCODE_HOME:-$HOME/.zcode}"
+PI_HOME="${PI_HOME:-$HOME/.pi}"
 ZCODE_CONFIG="$ZCODE_HOME/cli/config.json"
 CODEGRAPH_HOOK_SOURCE="$REPO_DIR/scripts/codegraph-zcode-prompt-hook.py"
 CODEGRAPH_HOOK_FILE="$ZCODE_HOME/hooks/codegraph-zcode-prompt-hook.py"
@@ -48,6 +51,7 @@ Usage:
   ./install.sh                 install for Codex (idempotent, default)
   ./install.sh --target claude install for Claude Code
   ./install.sh --target zcode  install for ZCode
+  ./install.sh --target pi     install for Pi
   ./install.sh --uninstall     remove dev-skills symlinks (including stale ones)
   ./install.sh --dry-run       show what would change, change nothing
   ./install.sh -h | --help     show this help
@@ -57,6 +61,7 @@ Env:
   CODEX_HOME         target Codex home (default: $HOME/.codex)
   CLAUDE_HOME        target Claude Code home (default: $HOME/.claude)
   ZCODE_HOME         target ZCode home (default: $HOME/.zcode)
+  PI_HOME            target Pi home (default: $HOME/.pi)
 EOF
 }
 while [ $# -gt 0 ]; do
@@ -64,7 +69,7 @@ while [ $# -gt 0 ]; do
     -u|--uninstall) ACTION="uninstall"; shift ;;
     -n|--dry-run)   DRY_RUN=1; shift ;;
     --target)
-      [ $# -ge 2 ] || { echo "install.sh: --target requires codex, claude, or zcode" >&2; exit 2; }
+      [ $# -ge 2 ] || { echo "install.sh: --target requires codex, claude, zcode, or pi" >&2; exit 2; }
       TARGET="$2"
       shift 2
       ;;
@@ -89,8 +94,14 @@ case "$TARGET" in
     # context hook is wired by this script instead (configure_codegraph_zcode_hook).
     CODEGRAPH_TARGET=""
     ;;
+  pi)
+    SKILLS_DST="$PI_HOME/agent/skills"
+    # Pi has no CodeGraph integration yet; only link skills, leave the binary
+    # alone and skip MCP auto-configuration.
+    CODEGRAPH_TARGET=""
+    ;;
   *)
-    echo "install.sh: unsupported target '$TARGET' (expected codex, claude, or zcode)" >&2
+    echo "install.sh: unsupported target '$TARGET' (expected codex, claude, zcode, or pi)" >&2
     exit 2
     ;;
 esac
@@ -363,7 +374,11 @@ do_uninstall() {
 
 case "$ACTION" in
   install)
-    ensure_codegraph
+    if [ "$TARGET" = "pi" ]; then
+      info "skipping codegraph for $TARGET (no Pi integration yet)"
+    else
+      ensure_codegraph
+    fi
     printf "\n"
     configure_codegraph_zcode_hook || warn "codegraph zcode hook setup incomplete (install continues)"
     printf "\n"
