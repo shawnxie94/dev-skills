@@ -63,6 +63,92 @@ The delegate mode has two execution targets:
   `parallel_dag`, create one packet per runnable node and preserve the source
   dependencies.
 
+## Runtime Harness Detection
+
+`execution_backend` is fixed by the *current* harness, not chosen by the
+dispatcher. Before selecting a backend the skill must answer one question:
+**which harness is hosting this session?** Use three detection layers in
+order of reliability; stop at the first layer that yields a definite
+answer.
+
+### Detection Layers
+
+**Layer 1 — Tool family (in-prompt, most reliable).** The model's own tool
+list is the most direct signal because each harness exposes a different
+native dispatch tool:
+
+| Tool family visible | Implied harness | `execution_backend` |
+|---|---|---|
+| `subagent` tool present | Pi | `pi_subagent` |
+| `Agent` tool present (no `subagent`) | ZCode native | `zcode_subagent` |
+| `multi_agent_v1__spawn_agent` (and siblings) present | Codex native | `codex_subagent` |
+| `mcp__zcode_codex__zcode_dispatch` present *and* no `multi_agent_v1` | Codex driving ZCode via MCP bridge | `zcode_mcp` |
+| None of the above | current session only | `current_session` |
+
+This layer is only available from inside an agent prompt, where the model
+can inspect its own tool list directly.
+
+**Layer 2 — Environment-variable marker (shell or in-prompt).** Useful for
+hooks, scripts, child processes, or any context that cannot see the
+parent's tool list. Documented markers:
+
+| Variable | Value | Implied harness |
+|---|---|---|
+| `PI_CODING_AGENT` | `true` | Pi |
+| `AI_AGENT` | `pi` | Pi (generic marker, also set by Pi) |
+
+Codex and ZCode do **not** publish a public `AI_AGENT` / `*_CODING_AGENT`
+process marker. If a layer-2 probe yields nothing, fall through to layer 3.
+
+**Layer 3 — Filesystem hints (weakest, last resort).** Useful only when no
+layer-1 or layer-2 signal is available; never override a higher-layer
+result.
+
+| Path | Implied harness |
+|---|---|
+| `$PI_HOME/agent/extensions/subagent/index.ts` exists | Pi (with subagent extension loaded) |
+| `$CODEX_HOME` exists | Codex (likely) |
+| `$ZCODE_HOME/cli/config.json` exists | ZCode (likely) |
+
+Multiple homes may exist on the same machine (e.g. a developer keeps Codex
+and Pi installed side-by-side). Layer 3 cannot disambiguate them; only
+layer 1 or layer 2 can.
+
+### Precedence and Ties
+
+1. Always trust layer 1 when the tool list is visible.
+2. Otherwise trust layer 2 (`PI_CODING_AGENT=true` / `AI_AGENT=pi`).
+3. Otherwise use layer 3, treating Pi's subagent extension path as a strong
+   positive signal and falling back to whichever of `$CODEX_HOME` /
+   `$ZCODE_HOME` exists.
+4. When two homes coexist and neither layer 1 nor layer 2 yields an
+   answer, **report `unknown` rather than guessing** — the user must run
+   the skill from the harness they intend, or pass
+   `DEV_SKILLS_FORCE_RUNTIME=pi|codex|zcode` for an explicit override.
+5. Never switch `execution_backend` away from what the host harness
+   requires (e.g. do not use `pi_subagent` from a Codex session, even if
+   `subagent` tools are visible through MCP). The host harness is the
+   parent; cross-harness dispatch is a separate decision that belongs in
+   `zcode_mcp`, not in this layer.
+
+### Shell Helper
+
+For pre-flight checks, hooks, or manual verification, run:
+
+```bash
+scripts/detect_runtime.sh                # prints pi | codex | zcode | unknown
+scripts/detect_runtime.sh --backend      # prints execution_backend value
+scripts/detect_runtime.sh --json         # structured output for tooling
+scripts/detect_runtime.sh --verbose      # show every probe result on stderr
+```
+
+The helper walks layers 2 and 3 (layer 1 requires the in-prompt tool list
+and is therefore not reachable from a shell). It exits `0` on a definite
+detection and `1` on `unknown`; never exits `0` for a guess. Test all
+three scenarios with `DEV_SKILLS_FORCE_RUNTIME=…` to exercise the helper
+without switching harness.
+
+
 ## Subagent Backend Matrix And Runtime Adapters
 
 `execution_backend` selects the runtime adapter after

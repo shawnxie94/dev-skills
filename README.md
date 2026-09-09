@@ -103,6 +103,16 @@ python3 scripts/check_skill_contracts.py
 
 该检查会校验 skill 元数据、Agent 配置、内部引用和 README 覆盖情况；各 skill 的结构校验仍由 `quick_validate.py` 负责。
 
+不确定当前 shell 是否在 Pi / Codex / ZCode 会话里时，运行探测脚本：
+
+```bash
+scripts/detect_runtime.sh                # 输出 pi | codex | zcode | unknown
+scripts/detect_runtime.sh --backend      # 输出对应的 execution_backend 值
+scripts/detect_runtime.sh --json         # 结构化输出，供其他脚本/hook 使用
+```
+
+该脚本只走 env var + filesystem 两层；agent prompt 内的 tool family 探测在 `skills/execution-delivery/references/delegate.md` 的「Runtime Harness Detection」章节描述。
+
 文档资产模式下的文件应尽量使用稳定文件名，并包含可追踪元数据，例如：
 
 ```yaml
