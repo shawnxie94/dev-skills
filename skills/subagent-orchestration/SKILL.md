@@ -177,7 +177,7 @@ Resolve runtime behavior before dispatch:
   guarantee that the original model HTTP request continues.
 - Provider failure after mutation is not permission to replay the whole task.
   Capture the partial diff, inspect terminal state, then choose a safe resume or
-  a new bounded repair packet.
+  a new bounded round packet.
 
 See `references/lifecycle.md` and `references/runtime-adapters.md` before
 writing runtime-specific instructions into another skill.

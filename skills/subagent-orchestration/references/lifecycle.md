@@ -46,9 +46,11 @@ writer:
 2. Determine whether the last tool could have produced a side effect.
 3. Prefer a retained session resume when the runtime validates it and the task
    contract supports a new turn.
-4. Otherwise issue one bounded repair packet describing the current state; do
+4. Otherwise issue one bounded round packet describing the current state; do
    not replay the entire original task blindly.
-5. After one failed repair attempt, return control to the user.
+5. Continue the convergence loop within `round_policy.max_rounds`; when the
+   budget is exhausted, a `no_progress` verdict stands, or a blocker remains,
+   return control to the user with the ledger evidence.
 
 A retained resume starts a new model turn from stored context. It does not prove
 that the original HTTP request, tool call, or process was resumed.

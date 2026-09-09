@@ -28,7 +28,9 @@ re-plan, create a DAG, or silently change who executes the work.
   final node result to the coordinator.
 - When this skill runs as a subagent, the subagent owns implementation and
   internal verification. The coordinating agent owns waiting and acceptance;
-  it must not edit or repair implementation files in the same delegated loop.
+  it must not implement feature work or repair implementation files beyond the
+  bounded `root_fix` exception (mechanical compile/lint/test fixes inside
+  `allowed_paths`, recorded in the round ledger) in the same delegated loop.
   Role selection, Runtime adapter, context policy, and recovery come from
   `$subagent-orchestration`; this skill remains the worker execution contract.
 - A subagent running this skill is a leaf executor: it must not call, spawn, or delegate to another subagent. Report any orchestration need to the coordinating agent.
@@ -387,8 +389,8 @@ Answer in the user's language unless they request otherwise. Use concise progres
 
 ## Next Gate
 
-<Coordinator acceptance, repair packet, `$execution-delivery` plan repair,
-`prepare-commit`, or user decision after the second failed attempt.>
+<Coordinator acceptance, round packet, `$execution-delivery` plan repair,
+`prepare-commit`, or user decision after the round budget is exhausted.>
 ```
 
 For small changes, compress the output but keep implemented work, verification, deviations, and residual risk.

@@ -41,7 +41,7 @@ Issue, or workspace task file. This mode does not implement code.
   model must not be used after the user explicitly changes the session choice.
 - A subagent is a leaf executor and must not recursively call, spawn, or delegate to another subagent. Orchestration remains with the coordinating session; a child that discovers orchestration work must report the scope gap instead of creating another child.
 - Do not mark a subagent task ready unless the user or source artifact clearly indicates approval and the execution target is explicit.
-- A subagent handoff is one goal and one final return by default. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. If acceptance fails, it may issue one consolidated repair packet; a second failed attempt or unresolved blocker escalates to the user.
+- A subagent handoff is one goal and one final return **per round**. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. A failed or partial round enters the convergence loop: the coordinator records `progress_verdict: progress` or `no_progress`, issues one consolidated round packet (`repair` or `advance`), and re-dispatches. The loop runs at most `round_policy.max_rounds` rounds (default 3). Exceeding the budget, a `no_progress` verdict, or an unresolved blocker escalates to the user. The coordinator may fix mechanical compile/lint/test errors itself inside the task's allowed paths, recorded as `root_fix`; feature work and design changes always return to the child.
 
 ## Inputs to Look For
 
@@ -181,12 +181,12 @@ running canonical acceptance. The protocols below describe supported
 integrations; they do not imply that the current environment exposes every
 named tool.
 
-| Backend | Dispatch | Long wait / status | One consolidated repair | Runtime boundary |
+| Backend | Dispatch | Long wait / status | Next-round packet | Runtime boundary |
 |---|---|---|---|---|
-| `zcode_subagent` | Native `Agent` tool, one call per packet with a self-contained prompt | Foreground call blocks until the final message; `run_in_background` + `TaskOutput` (blocking) for long nodes; no polling | `SendMessage` to the same agent, once, with the complete repair packet | ZCode native child implementation and tests |
-| `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, once, with the complete repair packet | Codex child implementation and internal verification |
-| `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` once on the same task with the complete repair packet | ZCode code implementation and repository tests when explicitly available |
-| `pi_subagent` | Nico `subagent` tool or `workflowScript` with one complete goal or assigned DAG node | Foreground result, `status`, `bg_wait`, or Fleet artifacts | Validated retained `resume`, otherwise one bounded repair dispatch | Pi + Nico child session and repository tests |
+| `zcode_subagent` | Native `Agent` tool, one call per packet with a self-contained prompt | Foreground call blocks until the final message; `run_in_background` + `TaskOutput` (blocking) for long nodes; no polling | `SendMessage` to the same agent, one consolidated round packet per round | ZCode native child implementation and tests |
+| `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, one consolidated round packet per round | Codex child implementation and internal verification |
+| `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` on the same task, one consolidated round packet per round | ZCode code implementation and repository tests when explicitly available |
+| `pi_subagent` | Nico `subagent` tool or `workflowScript` with one complete goal or assigned DAG node | Foreground result, `status`, `bg_wait`, or Fleet artifacts | Validated retained `resume`, otherwise one bounded round dispatch | Pi + Nico child session and repository tests |
 
 ### `zcode_subagent`
 
@@ -210,10 +210,11 @@ natively through the `Agent` tool; no MCP, no Codex.
   plus changed files, tests, deviations, blockers, and `attempt`. The
   subagent's final message is visible only to the coordinator, not to the
   user — relay the outcome after acceptance.
-- Only after `completed`, run the coordinator's acceptance. If it fails, send
-  one complete consolidated repair packet to the same agent via `SendMessage`
-  (the agent resumes in the background with its prior context). A second
-  failure or unresolved blocker goes to the user.
+- Only after `completed`, run the coordinator's acceptance. If it fails or
+  returns partial, send one complete consolidated round packet to the same
+  agent via `SendMessage` (the agent resumes in the background with its prior
+  context) and continue the loop until acceptance passes or the round budget /
+  a blocker ends it. An unresolved blocker goes to the user.
 
 ### `codex_subagent`
 
@@ -226,9 +227,11 @@ Codex sessions only; unavailable from ZCode.
   repeated status retrieval or busy polling while the agent is unchanged.
 - Require the final child response to include `completed`, `blocked`, or
   `failed`, plus changed files, tests, deviations, blockers, and `attempt`.
-- Only after `completed`, run the coordinator's acceptance. If it fails, send
-  one complete consolidated repair through `multi_agent_v1__send_input` to the
-  same agent. A second failure or unresolved blocker goes to the user.
+- Only after `completed`, run the coordinator's acceptance. If it fails or
+  returns partial, send one complete consolidated round packet through
+  `multi_agent_v1__send_input` to the same agent and continue the loop until
+  acceptance passes or the round budget / a blocker ends it. An unresolved
+  blocker goes to the user.
 
 ### `zcode_mcp`
 
@@ -249,8 +252,9 @@ ZCode session delegates — inside ZCode use `zcode_subagent`.
 - Require a final `completed`, `blocked`, or `failed` response containing
   changed files, tests, deviations, blockers, and `attempt`. A successful
   ZCode response is still only an execution result, not coordinator acceptance.
-- After a failed coordinator acceptance, call `zcode_continue` at most once
-  with one complete consolidated repair packet. If ZCode requests permission
+- After a failed coordinator acceptance, call `zcode_continue` with one
+  complete consolidated round packet and continue the loop until acceptance
+  passes or the round budget / a blocker ends it. If ZCode requests permission
   or user input through `zcode_respond`, do not auto-approve; return a user
   blocker. Use `zcode_stop` only when the user or coordinator explicitly asks
   to stop.
@@ -333,10 +337,10 @@ background, workflow, status, steering, and retained-resume operations.
   the outcome after acceptance.
 - Only after `completed`, run the coordinator's acceptance. If it fails,
   prefer a retained child `resume` only when Nico reports the child resumable
-  and the partial state is safe. Otherwise issue one complete repair packet
-  with `attempt: 2`. A retained resume starts a new turn from a persisted
-  session; it is not in-flight HTTP recovery. A second failure or unresolved
-  blocker goes to the user.
+  and the partial state is safe. Otherwise issue one complete round packet.
+  A retained resume starts a new turn from a persisted session; it is not
+  in-flight HTTP recovery. Continue the loop until acceptance passes or the
+  round budget / a blocker ends it; an unresolved blocker goes to the user.
 - Pi/Nico model, thinking, fallback, timeout, output, and acceptance settings
   are resolved from the effective profile and call contract. Preserve any
   user-selected model/provider/runtime exactly; never silently substitute.
@@ -344,9 +348,18 @@ background, workflow, status, steering, and retained-resume operations.
 The adapter contract is:
 
 ```text
-dispatch once → bounded wait → explicit terminal result → coordinator acceptance
-                         ↘ one consolidated repair → bounded wait → acceptance
+round r = 1..max_rounds:
+  dispatch -> bounded wait -> explicit terminal result -> coordinator acceptance
+    pass            -> converged
+    fail / partial  -> coordinator verdict
+        progress    -> round packet -> round commit -> re-dispatch (r+1)
+        no_progress -> escalate to user
+    (r > max_rounds -> escalate to user)
 ```
+
+Each round is recorded in agent-brain's run-state ledger, and each round's
+task-owned changes are committed through agent-brain `round-commit` with an
+explicit file list so partial work is preserved; push stays convergence-only.
 
 Do not claim that `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or
 `pi_subagent` is available merely because the protocol supports it. If the
@@ -490,13 +503,18 @@ target does not need a task file. Use stable filenames such as
    - Require blockers to preserve current branch state and explain the missing
      decision or failing check.
 
-8. Define the repair limit.
-   - If final batch acceptance or DAG integration acceptance fails, the
-     coordinating agent creates one repair packet containing all known findings,
-     failed checks, expected corrections, and the same overall acceptance.
-   - Retry the same goal at most once. Do not send piecemeal repair prompts.
-   - If the second attempt fails or remains blocked, stop automation and return
-     the evidence and choices to the user.
+8. Define the round budget.
+   - Record `round_policy.max_rounds` (default 3) in the packet; the loop runs
+     at most that many rounds.
+   - After a failed or partial round, the coordinating agent judges `progress`
+     or `no_progress` and creates one consolidated round packet containing all
+     known findings, failed checks, expected corrections, and the same overall
+     acceptance. Do not send piecemeal prompts.
+   - Record each round through agent-brain `round-commit` (explicit file list,
+     `Round:` / `Acceptance:` trailer) so partial work is preserved and
+     traceable.
+   - A `no_progress` verdict, an exhausted budget, or a remaining blocker
+     stops automation and returns the evidence and choices to the user.
 
 9. Finish with routing.
    - If tasks are draft, state what approval is needed before moving them to ready.
@@ -527,10 +545,12 @@ subagent_scope: user | project | both  # Pi/Nico only; defaults to user
 context_policy: fresh | fork | retained_resume
 lifecycle_policy: <foreground/background, timeout, status/wait, stop/resume, failure handling>
 acceptance_scope: batch | node_and_batch
-attempt_policy:
-  max_attempts: 2
-  repair: consolidated_repair_packet
-  escalate_after_exhaustion: user_decision
+round_policy:
+  max_rounds: 3
+  converged_when: canonical_acceptance_pass
+  progress_judgment: coordinator
+  no_progress_action: escalate_user
+  round_commit: explicit_file_list
 sources:
   - <source artifact path or issue>
 related:
