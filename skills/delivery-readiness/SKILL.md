@@ -42,6 +42,14 @@ Evaluate the stage that is actually being crossed. Do not mark an artifact ready
 
 The report should normally be `docs/reviews/<feature>-readiness.yaml` when document artifacts are enabled. For an agent-brain plan-linked Build, use the agent-brain readiness-report protocol and include its SHA-256 in the Task Pack `source_artifacts` and readiness fields.
 
+One canonical report per stage and feature. Iterate **inside** that file:
+append each reassessment to its own `iterations` list (or, if the project
+prefers separate files, keep them under `docs/reviews/history/` and leave the
+canonical path in place). Do not publish `...-iteration-N.yaml` siblings in
+`docs/reviews/`, because plans and Task Packs embed the canonical report's
+SHA-256 and a moving file set makes the evidence chain unreadable. Never rename
+or relocate readiness files that an existing plan already references by hash.
+
 ## Loop semantics
 
 The loop is a controlled convergence process, not repeated prompting:
@@ -80,6 +88,20 @@ next_action: "Ask the technical owner to choose scheduler or worker ownership"
 ```
 
 Use deterministic evidence whenever possible: file/section references, source hashes, test commands, diff scope, API/schema inspection, or deployment observations. AI judgment can identify a risk or propose a repair, but it cannot substitute for a command result, artifact identity, or human approval.
+
+## Record the run
+
+After a readiness assessment or gate finishes (including `blocked`), append one
+feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill delivery-readiness \
+  --status completed \
+  --validation pass \
+  --task-type readiness \
+  --next-handoff write-trd
+```
 
 ## Handoff rules
 

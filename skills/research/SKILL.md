@@ -42,6 +42,20 @@ Use `fresh` context for independent research and audit. Prefer durable or
 file-only output for large reports. Do not paste raw source dumps or complete
 child transcripts into the canonical research artifact.
 
+## Record the Run
+
+After a brief or deep research run finishes (including a blocked or abandoned
+outcome), append one feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill research \
+  --status completed \
+  --validation pass \
+  --task-type research \
+  --next-handoff write-prd
+```
+
 ## Handoff Map
 
 - `brief` → product scope is ready: `$write-prd`; technical options only: `$write-trd`; concrete change with unclear blast radius: `codebase-analysis` (impact).

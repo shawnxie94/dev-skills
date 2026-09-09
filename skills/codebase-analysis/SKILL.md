@@ -34,6 +34,23 @@ Decision rules:
 
 Document artifact mode: check `.agent/config.toml`, falling back to `.dev-skills/config.toml` only when the former does not exist. When `[document_artifacts] enabled = true`, prefer returning the map or report in chat unless the user asks for a managed file; these artifacts are decision inputs, not canonical delivery documents. The `deep-dive` mode is the exception by design: its canonical artifact is the durable learning note in the user's learning-notes folder, independent of workspace artifact mode.
 
+## Record the Run
+
+After an orientation, deep-dive, or impact run finishes (including a blocked
+outcome), append one feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill codebase-analysis \
+  --status completed \
+  --validation pass \
+  --task-type orientation \
+  --next-handoff write-trd
+```
+
+Use the mode you actually ran as `--task-type` (`orientation`, `deep-dive`, or
+`impact`).
+
 ## Handoff Map
 
 - `orientation` → technical direction needed: `$write-trd`; planning against the mapped system: execution-delivery (plan mode); a suspected bug on a path found here: `$bug-reproduction`.

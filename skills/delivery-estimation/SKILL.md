@@ -35,6 +35,20 @@ Decision rules:
 
 Document artifact mode: check `.agent/config.toml`, falling back to `.dev-skills/config.toml` only when the former does not exist. When `[document_artifacts] enabled = true`, write artifacts to `docs/estimates/` (or `document_artifacts.paths.delivery_estimates`) with stable filenames and metadata frontmatter, and keep the chat reply to path plus summary; otherwise return artifacts in chat or as attachments.
 
+## Record the Run
+
+After a sealed review or a synthesis finishes (including a blocked outcome),
+append one feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill delivery-estimation \
+  --status completed \
+  --validation pass \
+  --task-type estimation \
+  --next-handoff write-prd
+```
+
 ## Handoff Map
 
 - `review` → after all first passes are sealed, the Research Lead runs `$delivery-estimation` in `synthesis` mode.

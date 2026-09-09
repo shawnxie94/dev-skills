@@ -100,6 +100,10 @@ execution context:
 - Do not recursively delegate work unless the assignment explicitly grants orchestration responsibility.
 - Respect the assignment's scope, dependencies, required skills, write ownership, forbidden writes, status, and feedback format.
 - Report newly discovered dependencies or scope gaps to the orchestrating agent instead of expanding the node unilaterally.
+- A `batch` result is not complete because an internal step passed, and a
+  `parallel_dag` node result is not the final feature result; the coordinator
+  owns integration acceptance. Do not stop for user confirmation after
+  internal steps unless the plan or packet explicitly requires it.
 
 Orchestration responsibility is perspective-dependent. When this skill runs as
 the selected `current_session` target, the current agent may implement the
@@ -110,7 +114,8 @@ implementation or piecemeal repair itself.
 
 ## Context And Output Budget
 
-Keep the active turn to the smallest useful projection:
+The hot/warm/cold budget is owned by agent-brain `task-loop.md`; the repo-level
+short-output convention is in this repository's README. Inside a Build run:
 
 - Start with task scope, current node, changed-file names/stat, and the next
   verification target.
@@ -137,21 +142,22 @@ identity) unchanged.
 ## Parallelism And Worktree Decision
 
 Use the plan's high-level `orchestration_mode` first. `execution_backend`
-identifies the subagent adapter and is not a worktree setting. `parallel_mode`
-remains the lower-level worktree and write-isolation contract:
+identifies the subagent adapter and is not a worktree setting. The
+`parallel_mode` taxonomy, mutexes, and write-ownership rules are owned by
+`$execution-delivery` (Shared Execution Contract); worktree location, branch
+naming, and `cleanup-run` behavior are owned by agent-brain `task-loop.md`. Do
+not restate or re-decide either contract here. Execution-side rules:
 
-1. For `batch`, use one actor and one serial implementation context. Internal
-   implementation steps may be ordered and verified, but they are not separate
-   delegated tasks or parent-agent interaction points.
-2. For `parallel_dag`, satisfy dependencies and run impact analysis before
-   starting the assigned node.
-3. If selected actors are read-only, they may share a checkout in parallel.
-4. If actors write files but execution can be serialized and ownership is
-   disjoint, reuse one checkout serially.
-5. If actors must write simultaneously, require non-overlapping ownership,
-   mutexes, dedicated branches, and dedicated worktrees.
-6. If impact is unclear or shared state is involved, keep the work serial and
-   assign one writer.
+1. `batch`: one actor and one serial implementation context. Ordered internal
+   steps are not delegated tasks or parent-agent interaction points.
+2. `parallel_dag`: satisfy dependencies and run impact analysis before starting
+   the assigned node; never touch a sibling node.
+3. Read-only actors may share a checkout. Serialized writes with disjoint
+   ownership may reuse one checkout. Simultaneous writes require non-overlapping
+   ownership, a mutex, a dedicated branch, and a dedicated worktree.
+4. Unclear impact or shared state: keep the work serial with one writer. Never
+   let two agents edit the same checkout at once; merge isolated results in
+   dependency order and rebase dependents after a merge.
 
 Each subagent receives only its whole-goal batch contract or assigned node
 contract, required context, exclusions, verification commands, and expected
@@ -172,21 +178,6 @@ main worktree
 ```
 
 Do not let two agents edit the same checkout simultaneously. Merge isolated results through PRs or serial review in dependency order. After a dependency task merges, rebase or recreate dependent task worktrees before continuing.
-
-## Batch and DAG Progression
-
-- In `batch`, the implementation batch is the complete approved goal. Keep one
-  active host goal, execute the internal sequence without creating parent-agent
-  interaction points, and return only when the whole goal reaches a final
-  `completed`, `blocked`, or `failed` state.
-- In `parallel_dag`, the implementation batch is the assigned plan node. Keep
-  one active goal for that node, execute only its scope, and return after its
-  node-level acceptance or an explicit blocker. Never claim sibling nodes.
-- A `batch` result is not complete merely because an internal step passes. A
-  `parallel_dag` node result is not the final feature result; the coordinator
-  performs integration acceptance after all required nodes return.
-- Do not stop for user confirmation after internal steps. Human input is only a
-  blocker when the plan or packet explicitly requires it.
 
 ## Long-Running Work
 

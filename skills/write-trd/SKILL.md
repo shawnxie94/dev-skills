@@ -78,6 +78,20 @@ When enabled: write the TRD to `docs/trd/<feature-slug>.md` (or `document_artifa
 
 If affected modules, contracts, data flow, or compatibility risks are unclear, run `codebase-analysis` (impact mode) before finalizing the TRD.
 
+## Record the Run
+
+After the TRD is written or updated (including a blocked outcome), append one
+feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill write-trd \
+  --status completed \
+  --validation pass \
+  --task-type trd \
+  --next-handoff delivery-readiness
+```
+
 ## Handoff Rules
 
 - If the TRD is accepted and implementation sequencing is needed, hand off to `$execution-delivery` (plan mode).

@@ -69,6 +69,20 @@ When enabled: write the PRD to `docs/prd/<feature-slug>.md` (or `document_artifa
    - Skip the gate for small features and informal handoffs; it is not a default post-step of every PRD.
    - When the gate runs, carry the readiness report path, source artifact hashes, and unresolved decisions with the PRD. A `blocked` result stops the handoff. Do not hide an open product decision inside a technical assumption.
 
+## Record the Run
+
+After the PRD is written or updated (including a blocked outcome), append one
+feedback event so `skill-retrospective` has evidence:
+
+```bash
+python3 <dev-skills>/scripts/record_skill_run.py \
+  --skill write-prd \
+  --status completed \
+  --validation pass \
+  --task-type prd \
+  --next-handoff delivery-readiness
+```
+
 ## Handoff Rules
 
 - If technical design is requested after the PRD, hand off to `write-trd`.
