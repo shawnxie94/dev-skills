@@ -51,12 +51,29 @@ Classify the objective before choosing a role:
   domain-specific release operator), with explicit allowed paths and rollback
   boundaries.
 
-A task containing both phases must split at the boundary: an auditor or
-researcher may identify and verify the command, then the coordinator hands the
-frozen command and acceptance checks to `worker`. Never assign an installation
-or configuration objective to `evidence-auditor`, `reviewer`, `scout`, or
-`oracle` merely because source research is needed first. A read-only profile
-may recommend an action, but it does not own the action.
+A task containing both phases does **not** automatically require two
+delegations. If the command, source, scope, and rollback are already known and the
+mutation is bounded, route the whole task directly to `worker`, including its
+own preflight and verification. Add a separate `researcher` or
+`evidence-auditor` only when the command/source is uncertain, alternatives need
+independent comparison, the mutation is high-risk or irreversible, or the
+acceptance contract explicitly requires independent evidence. In that case,
+the coordinator freezes the auditor's findings before handing the action to
+`worker`. Never assign an installation or configuration objective to
+`evidence-auditor`, `reviewer`, `scout`, or `oracle` merely because source
+research is useful. A read-only profile may recommend an action, but it does
+not own the action.
+
+## Efficiency Rule
+
+Roles are a capability menu, not a mandatory pipeline. Optimize for the fewest
+actors and tool calls that preserve safety, evidence quality, and clear
+ownership. A single `worker` may research a known bounded task, perform its own
+preflight, execute the mutation, and verify the result when its tools and
+acceptance contract cover the whole objective. Do not insert a researcher,
+auditor, reviewer, or second handoff merely to satisfy a checklist. Split work
+only when the independent pass materially reduces risk, resolves uncertainty,
+protects context, or improves acceptance confidence.
 
 ## Role Selection
 

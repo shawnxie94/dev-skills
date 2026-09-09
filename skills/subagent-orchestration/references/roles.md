@@ -1,7 +1,9 @@
 # Logical Subagent Roles
 
-Roles are stable capability contracts. Runtime agent names, model choices, and
-execution modes are resolved separately by the adapter.
+Roles are stable capability contracts, not mandatory workflow stages. Runtime
+agent names, model choices, and execution modes are resolved separately by the
+adapter. Prefer one capable actor for a bounded goal; add a separate role only
+when it creates material safety, context, independence, or acceptance value.
 
 ## Initial role registry
 
