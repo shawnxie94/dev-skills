@@ -88,6 +88,7 @@ Use deterministic evidence whenever possible: file/section references, source ha
 - Plan authors run `gate --stage plan_to_build` before invoking agent-brain or `$implement-plan`.
 - Implementation and release owners use the later gates to prevent unverified work from being treated as complete.
 - A blocked report is a valid output. Return the exact issue IDs, missing evidence, owner, and next action; do not hand off as if the stage passed.
+- Auditing several artifacts is context-heavy: delegate `assess`/`trace` reading to `$subagent-orchestration` with an `evidence-auditor` and consume only the report; the coordinating agent owns the `ready`/`blocked` decision and any explicitly authorized repair.
 
 When agent-brain is in use, its Task Pack remains the outer scope contract and this report is the readiness input. Do not create a second acceptance truth in the skill. The canonical execution plan remains the sequencing truth.
 

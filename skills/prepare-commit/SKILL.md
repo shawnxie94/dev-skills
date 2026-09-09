@@ -167,3 +167,4 @@ When a commit is created, append:
 - If review finds blocking implementation defects, hand off to `implement-plan`.
 - If review finds broad impact concerns, hand off to `codebase-analysis` (impact mode).
 - If commit succeeds and the worktree is clean, no next skill is required by default.
+- Large or author-owned changes benefit from an independent review: delegate the diff review to `$subagent-orchestration` with a `reviewer`; the coordinating agent still owns the merge/commit decision and must not rubber-stamp the child's verdict.

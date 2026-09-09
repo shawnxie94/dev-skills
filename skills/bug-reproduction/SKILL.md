@@ -62,6 +62,7 @@ Use the relevant sources for the bug:
 - If the bug is reproduced and the fix is straightforward, hand off to `implement-plan`.
 - If the fix requires structural change, hand off to `refactor-plan`.
 - If the blast radius is unclear, hand off to `codebase-analysis` (impact mode).
+- Log, dump, or multi-run evidence gathering is context-heavy: delegate it to `$subagent-orchestration` with a `scout` and keep only confirmed facts, reproduction steps, and the narrowed failure point in the coordinator's context.
 
 ## Output Format
 

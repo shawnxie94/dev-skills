@@ -147,6 +147,11 @@ python3 <dev-skills>/scripts/record_skill_run.py \
 Use the actual outcome status (`completed`, `blocked`, `failed`, `rolled_back`);
 failed and blocked outcomes are the most useful signals for later retrospectives.
 
+## Handoff Rules
+
+- If the release is blocked by an implementation defect, hand off to `$implement-plan`.
+- Long-running or log-heavy verification and observation are context-heavy: delegate them to `$subagent-orchestration` with a `verifier` and keep only the pass/fail evidence, residual risks, and the next action; the release owner still owns the go/no-go decision.
+
 ## Hard stops
 
 - Quality Gate is not PASS or tested commit differs from candidate.

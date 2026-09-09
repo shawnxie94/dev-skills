@@ -40,3 +40,4 @@ Document artifact mode: check `.agent/config.toml`, falling back to `.dev-skills
 - `review` → after all first passes are sealed, the Research Lead runs `$delivery-estimation` in `synthesis` mode.
 - `synthesis` → material scope gaps: back to `$research` (deep mode) to revise and re-freeze the packet, then rerun all reviewers; a risky unknown dominates the range: execution-delivery (plan mode) as a risk-first spike after solution scope settles; accepted estimate: a planning input for roadmap, staffing, or execution planning.
 - Packet hash, rubric version, or work-item set mismatch: reject the set and rerun every reviewer on one frozen packet; never average across versions.
+- `review` is sealed by design: run each estimate in its own fresh subagent with no other reviewer's output, target budget, or prior estimate visible; the Lead runs `synthesis` itself and must never average across unsealed passes.

@@ -45,6 +45,7 @@ Before refactoring shared interfaces, data models, module boundaries, generated 
 - If the refactor plan is accepted and should be implemented, hand off to `implement-plan`.
 - If the refactor touches broad callers or shared contracts, hand off to `codebase-analysis` (impact mode).
 - After implementation, hand off to `prepare-commit`.
+- Caller and impact scanning before planning is context-heavy: delegate the scan to `$subagent-orchestration` with a `scout`, or run `codebase-analysis` (impact mode) in a child; plan from the bounded impact list, not from a full repository read.
 
 ## Planning Workflow
 
