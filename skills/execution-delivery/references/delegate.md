@@ -27,6 +27,8 @@ Issue, or workspace task file. This mode does not implement code.
 - Put only currently executable parallel tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
 - For a delegated `batch`, create one ready task for the whole goal rather than unrelated serial tasks.
 - Do not implement code or redesign the feature; if the plan is unclear, hand back to plan mode or `codebase-analysis` (impact mode).
+- If the user specifies a subagent model, provider, runtime, or thinking level, preserve it exactly in the handoff and dispatch. An unavailable, unsupported, unauthenticated, or out-of-quota choice is a user-visible blocker; never substitute another model or provider without explicit user approval.
+- A subagent is a leaf executor and must not recursively call, spawn, or delegate to another subagent. Orchestration remains with the coordinating session; a child that discovers orchestration work must report the scope gap instead of creating another child.
 - Do not mark a subagent task ready unless the user or source artifact clearly indicates approval and the execution target is explicit.
 - A subagent handoff is one goal and one final return by default. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. If acceptance fails, it may issue one consolidated repair packet; a second failed attempt or unresolved blocker escalates to the user.
 
@@ -157,7 +159,7 @@ current harness, not by preference:
 
 - ZCode session (native `Agent` tool present): `execution_backend=zcode_subagent`. Never spawn Codex children from ZCode (`codex_subagent` is unavailable here), and never wrap ZCode subagents in MCP calls (`zcode_mcp` is a cross-harness bridge, not in-session delegation).
 - Codex session (`multi_agent_v1` tools present): `execution_backend=codex_subagent`, or `zcode_mcp` only when the ZCode MCP bridge tools are actually exposed in that session.
-- Pi session (native `subagent` tool present, spawned by the `pi-coding-agent` `subagent/` extension): `execution_backend=pi_subagent`. Never dispatch from Pi to ZCode or Codex children; the Pi `subagent` tool is the in-session delegation mechanism.
+- Pi session (native `subagent` tool present, spawned by the `pi-coding-agent` `subagent/` extension): `execution_backend=pi_subagent`. Never dispatch from Pi to ZCode or Codex children; the Pi `subagent` tool is the in-session delegation mechanism. The Pi child is a leaf executor and must not call the `subagent` tool again.
 - Neither tool family is available: report a blocked handoff.
 
 All adapters execute the packet; no adapter's success declaration is the final

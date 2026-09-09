@@ -26,6 +26,8 @@ re-plan, create a DAG, or silently change who executes the work.
 - When this skill runs as a subagent, the subagent owns implementation and
   internal verification. The coordinating agent owns waiting and acceptance;
   it must not edit or repair implementation files in the same delegated loop.
+- A subagent running this skill is a leaf executor: it must not call, spawn, or delegate to another subagent. Report any orchestration need to the coordinating agent.
+- If the user specified a subagent model, provider, runtime, or thinking level, use that exact choice. If it is unavailable or unsupported, return a user-visible blocker instead of switching models or providers.
 - Scaffolded code is not implemented. Distinguish "scaffolded" from "verified" in every completion claim and name the end-to-end chain that was actually exercised.
 - Enforce the assigned node's `write_ownership`, `forbidden_writes`, dependencies, verification, and feedback requirements when present.
 - When agent-brain is present, treat its Task Pack as the outer contract and the selected dev-skill as the inner execution capability.

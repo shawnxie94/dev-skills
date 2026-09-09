@@ -47,3 +47,8 @@ Document artifact mode: check `.agent/config.toml`, falling back to `.dev-skills
 - `$implement-plan` → plan invalid or hash stale: back to `plan` mode before any repair or code change.
 
 For subagent execution, the default contract is one goal and one final return. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts batch or integration acceptance. A failed acceptance may receive at most one consolidated repair packet. A second failed attempt, or an unresolved blocker after the retry, ends the automated loop and returns the decision to the user.
+
+Hard delegation rules:
+
+- If the user specifies a subagent model, provider, runtime, or thinking level, that choice is immutable. Pass it through exactly; if it is unavailable, unsupported, unauthenticated, or out of quota, stop and explicitly tell the user. Never silently substitute another model or provider.
+- A subagent is a leaf executor. It must not call, spawn, delegate to, or otherwise recursively create another subagent. Only the coordinating session may dispatch a child or issue the bounded repair handoff defined by this contract.
