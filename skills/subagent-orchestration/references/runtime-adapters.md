@@ -3,6 +3,20 @@
 The logical role contract is shared; invocation and lifecycle semantics are
 runtime-specific.
 
+## Shared Model-Selection Rule
+
+Before the first delegated run in a conversation, obtain and record the user's
+explicit `provider/model` choice unless the current request already supplied
+one. Reuse it for every subsequent new child dispatch in that conversation;
+do not ask again unless the user explicitly changes it. Preserve the choice
+exactly. If the selected model is unavailable, unsupported by the adapter,
+unauthenticated, or out of quota, report a visible blocker and ask the user for
+another choice; never silently substitute a model or provider.
+
+A retained resume may be pinned to its original model. After an explicit model
+change, do not resume that child under the old choice; start a new bounded
+dispatch when continuation is needed.
+
 ## Pi + Nico
 
 - Resolve agents through Nico's discovered builtin, user, and project profiles.

@@ -33,11 +33,42 @@ Every delegation must make these decisions explicit:
 7. **Failure policy**: terminal state, partial side effects, retry/resume rule,
    and the handoff required before another attempt.
 
+8. **Session model choice**: before the first delegated run in a conversation,
+   obtain an explicit user-selected `provider/model` (unless the user already
+   supplied one). Record it as a conversation-scoped choice, forward it
+   explicitly to every subsequent new child run, and do not ask again until
+   the user explicitly changes it.
+
 The runtime may use different names, APIs, lifecycle states, and persistence
 models. A role is a capability contract, not a required provider, model, or
 agent filename. If a runtime cannot provide an equivalent capability, report a
 visible blocker or explicitly labelled degraded fallback; never silently switch
 runtime, model, or role.
+
+## Session Model Gate
+
+Model selection is a user decision, not an orchestration default:
+
+- Before the first subagent dispatch in the current conversation, stop and ask
+  the user to choose the exact `provider/model` (and, if relevant, the
+  thinking level), for example: “请确认本次子代理使用哪个
+  `provider/model`？” If the current user message already names the model,
+  treat that as the explicit choice and do not ask a redundant question.
+- Keep the choice in conversation state as `selected_subagent_model`. Apply it
+  to every subsequent **new** subagent dispatch, regardless of logical role,
+  runtime adapter, workflow stage, or parallel lane. Pass it explicitly rather
+  than relying on profile defaults, parent inheritance, tier recommendations,
+  or fallback models.
+- Do not ask again for another child in the same conversation. If the user
+  explicitly requests a model change, replace the session choice before the
+  next dispatch; if the user asks to change it without naming a model, ask for
+  the exact choice.
+- If the selected model is unavailable, unsupported by the adapter,
+  unauthenticated, or out of quota, stop with a visible blocker and ask the
+  user to select another model. Never silently substitute a model or provider.
+- A retained resume may be pinned by the runtime to its original model. After
+  an explicit model change, do not resume that child under the old choice;
+  start a new bounded dispatch when continuation is needed.
 
 ## Side-Effect Preflight
 
@@ -122,6 +153,9 @@ Resolve runtime behavior before dispatch:
 
 - Pi with Nico uses the `subagent` tool, Nico agent discovery, background run
   artifacts, `status`/`bg_wait`, steering, and guarded retained `resume`.
+- Forward the session-selected model explicitly at each new dispatch when the
+  adapter supports model selection; an adapter that cannot honor it is a
+  visible blocker, not a reason to fall back silently.
 - Codex and ZCode use their native actor APIs and their own wait/continue
   semantics.
 - A Pi retained resume is a new child turn from a persisted session, not a
@@ -153,6 +187,8 @@ runtime fallback inside this skill.
 
 When dispatching, return or persist a packet containing:
 
+- session-scoped `selected_subagent_model` and whether it was explicitly
+  supplied by the user or obtained through the first-dispatch model gate;
 - logical role and resolved runtime adapter;
 - objective and bounded scope;
 - required context and explicitly omitted context;

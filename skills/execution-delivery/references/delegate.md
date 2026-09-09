@@ -13,6 +13,12 @@ Issue, or workspace task file. This mode does not implement code.
 - Preserve traceability to PRD, TRD, execution plan, issues, decisions, and code context.
 - Preserve the plan's `orchestration_mode`: do not create a DAG for a `batch` plan or a second DAG for a `parallel_dag` plan.
 - Require an explicit execution target: `current_session` or `subagent`. Do not silently turn a routing request into remote execution.
+- When the target is `subagent`, enforce the session model gate before creating a
+  ready packet or dispatching: on the first subagent delegation in a
+  conversation, obtain the user's explicit `provider/model` choice (unless
+  already supplied), then reuse that exact choice for every subsequent new
+  child in the conversation. Do not ask again unless the user explicitly
+  changes it.
 - Keep every subagent task bounded by scope, exclusions, write ownership, verification, and acceptance criteria.
 - Preserve required capabilities and required skills from the source execution-plan node when the target platform supports them.
 - Preserve the shared contract fields defined in the router: `plan_id`, `source_plan_sha256`, `base_commit`, `task_id`, `plan_unit_id`, `source_artifacts`, `source_hash`, `source_task_pack_sha256`, `acceptance_ids`, and `evidence_required`.
@@ -27,7 +33,12 @@ Issue, or workspace task file. This mode does not implement code.
 - Put only currently executable parallel tasks in `ready`; tasks with unmet dependencies must stay draft or blocked.
 - For a delegated `batch`, create one ready task for the whole goal rather than unrelated serial tasks.
 - Do not implement code or redesign the feature; if the plan is unclear, hand back to plan mode or `codebase-analysis` (impact mode).
-- If the user specifies a subagent model, provider, runtime, or thinking level, preserve it exactly in the handoff and dispatch. An unavailable, unsupported, unauthenticated, or out-of-quota choice is a user-visible blocker; never substitute another model or provider without explicit user approval.
+- Preserve the session-selected subagent model/provider exactly in every new
+  handoff and dispatch, regardless of role, lane, or runtime adapter. An
+  unavailable, unsupported, unauthenticated, or out-of-quota choice is a
+  user-visible blocker; never substitute another model or provider without
+  explicit user approval. A retained resume that is pinned to its original
+  model must not be used after the user explicitly changes the session choice.
 - A subagent is a leaf executor and must not recursively call, spawn, or delegate to another subagent. Orchestration remains with the coordinating session; a child that discovers orchestration work must report the scope gap instead of creating another child.
 - Do not mark a subagent task ready unless the user or source artifact clearly indicates approval and the execution target is explicit.
 - A subagent handoff is one goal and one final return by default. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. If acceptance fails, it may issue one consolidated repair packet; a second failed attempt or unresolved blocker escalates to the user.
@@ -401,6 +412,12 @@ target does not need a task file. Use stable filenames such as
      or `zcode_mcp` when its bridge is exposed, in a Codex session; `pi_subagent`
      when the native `subagent` tool is present in a Pi session. Do not
      offer a backend the current harness cannot serve.
+   - Before creating a ready packet or dispatching the first subagent of this
+     conversation, run the session model gate from `$subagent-orchestration`.
+     Store `selected_subagent_model` in conversation state and in each task
+     packet. If no model was explicitly supplied, stop and ask the user for the
+     exact `provider/model`; do not infer it from profile defaults or tier
+     recommendations. Later new child packets reuse it without another prompt.
      A current-session handoff leaves `execution_backend` unset or empty; never
      infer a backend from the word subagent.
    - If approval is ambiguous, write draft tasks only; do not place tasks in `ready`.
@@ -504,6 +521,7 @@ updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
 execution_backend: zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
+selected_subagent_model: <explicit provider/model chosen for this conversation>
 logical_role: <required for a subagent; resolved by $subagent-orchestration>
 subagent_scope: user | project | both  # Pi/Nico only; defaults to user
 context_policy: fresh | fork | retained_resume
@@ -660,6 +678,7 @@ Answer in the user's language unless they request otherwise. Prefer:
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
+- selected_subagent_model: `<session-selected provider/model; required when target=subagent>`
 - logical_role: `<resolved by $subagent-orchestration>`
 - subagent_scope: `user` | `project` | `both` (Pi/Nico only)
 - context_policy: `fresh` | `fork` | `retained_resume`

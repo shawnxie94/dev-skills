@@ -167,7 +167,7 @@ related: {}
 - Requirement & Solution Analyst：绑定 `research`（deep），必要时串联 `write-prd`、`write-trd`、`codebase-analysis`（orientation/impact）。
 - Estimation Reviewer：只绑定 `delivery-estimation`（review 模式）；所有 Reviewer 使用相同冻结输入、指令、Skill 版本和输出格式，首轮不读取其他估时也不读取 synthesis 逻辑，模型或 runtime 作为主要变量。
 - Delivery Actor：`batch` 计划绑定一个完整 goal 的 `implement-plan`；`parallel_dag` 计划按节点绑定 `implement-plan` 及节点要求的专项 Skills。子智能体只执行收到的整体 goal 或当前节点，不自行改变计划形态、认领 sibling issue 或递归创建 Agent。
-- 模型与递归硬约束：用户指定 subagent 的模型、provider、runtime 或 thinking level 时必须原样保留；不可用、未认证或超额时必须明示用户，不能擅自替换。subagent 是叶子执行者，不支持递归调用、创建或委派其他 subagent；编排只能由协调会话负责。角色契约、Runtime adapter、上下文卸载和生命周期策略由 `subagent-orchestration` 维护，其他 Skill 不重复定义。
+- 模型与递归硬约束：subagent 首次委派前必须向用户明确确认 `provider/model`（用户当前请求已明确指定时视为已确认）；确认结果只在当次对话内保存，后续所有新子 Agent 复用，直到用户明确变更，不按角色默认值或 fallback 自动切换。不可用、未认证或超额时必须明示用户，不能擅自替换。subagent 是叶子执行者，不支持递归调用、创建或委派其他 subagent；编排只能由协调会话负责。角色契约、Runtime adapter、上下文卸载和生命周期策略由 `subagent-orchestration` 维护，其他 Skill 不重复定义。
 - Release Operator：只绑定 `release-delivery`；从项目 profile 的 `release.yaml` 精确定位 runbook，候选/QG/审批/备份/回滚证据不完整时停止，不自行批准合并或生产发布。
 
 `execution-delivery`（plan 模式）先产出平台无关的并行性评估；用户选择后，`batch` 计划产出一个整体 Actor 契约，`parallel_dag` 计划的每个节点产出 Actor 契约。契约至少包含 required capabilities、required skills、write ownership、forbidden writes、verification 和 handoff readiness。
