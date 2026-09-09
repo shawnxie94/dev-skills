@@ -73,19 +73,27 @@ Use the relevant parts of this checklist:
 - If the user only needs technical options or architecture inputs, hand off to `write-trd`.
 - If the research exposes a concrete change with unclear blast radius, hand off to `codebase-analysis` (impact mode).
 
-## Optional Subagent Strategy
+## Delegated Research And Context Offload
 
-If an external squad, managed-agent platform, issue workflow, or lead has already assigned the research scope, execute that scope directly. Do not recursively create subagents or redistribute work unless the assignment explicitly grants orchestration responsibility. When you run as the main agent on a direct user request, the request itself grants orchestration responsibility; the restriction above applies when you are already an assigned executor.
+If an external squad, managed-agent platform, issue workflow, or lead has already assigned the research scope, execute that scope directly. Do not recursively create subagents or redistribute work unless the assignment explicitly grants orchestration responsibility. When you run as the main agent on a direct user request, use `$subagent-orchestration` when delegation is useful; the restriction above applies when you are already an assigned executor.
 
-Use subagents only when the research scope is broad enough to benefit from parallel independent passes. Keep prompts minimal and avoid giving subagents your expected answer.
+Delegate broad or context-heavy research when it involves many sources, long
+pages/PDFs, repeated extraction, web validation, or independent evidence review.
+Use the logical `researcher` role for collection and first synthesis, then
+`evidence-auditor` for important claims. Keep prompts minimal and do not reveal
+an expected answer.
 
 Common splits:
 
 - Technology paths and architecture options.
 - Industry practices, mature products, and open-source examples.
 - Risks, blind spots, and evaluation criteria.
+- Source collection versus claim/citation verification.
 
-The main agent should synthesize results, resolve conflicts, cite evidence, and avoid copying subagent output blindly.
+Require bounded claims, citations, uncertainty, and artifact references. Prefer
+file-only or structured child output when the report is large. The main agent
+must synthesize results, resolve conflicts, cite evidence, and avoid copying raw
+subagent output blindly.
 
 ## Output Format
 

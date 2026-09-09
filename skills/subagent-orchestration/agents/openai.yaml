@@ -1,0 +1,3 @@
+display_name: Subagent Orchestration
+short_description: Choose subagent roles, runtime adapters, context policies, and safe lifecycle handling.
+default_prompt: "Use $subagent-orchestration to choose a logical subagent role, resolve the current runtime adapter, keep the coordinator context bounded, and produce a safe delegation or lifecycle handoff without implementing the delegated work."

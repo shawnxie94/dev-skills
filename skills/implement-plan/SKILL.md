@@ -26,6 +26,8 @@ re-plan, create a DAG, or silently change who executes the work.
 - When this skill runs as a subagent, the subagent owns implementation and
   internal verification. The coordinating agent owns waiting and acceptance;
   it must not edit or repair implementation files in the same delegated loop.
+  Role selection, Runtime adapter, context policy, and recovery come from
+  `$subagent-orchestration`; this skill remains the worker execution contract.
 - A subagent running this skill is a leaf executor: it must not call, spawn, or delegate to another subagent. Report any orchestration need to the coordinating agent.
 - If the user specified a subagent model, provider, runtime, or thinking level, use that exact choice. If it is unavailable or unsupported, return a user-visible blocker instead of switching models or providers.
 - Scaffolded code is not implemented. Distinguish "scaffolded" from "verified" in every completion claim and name the end-to-end chain that was actually exercised.
@@ -74,12 +76,10 @@ For an agent-brain Task Pack, verify all of these values before Build:
 6. If `execution_target=subagent`, `execution_backend` is present and is one of
    `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or `pi_subagent`, matching the
    current harness; never switch the selected adapter. When the selected
-   backend is `pi_subagent`, the packet must also declare `subagent_name`
-   (the agent registry name) and `subagent_scope` (`user`, `project`, or
-   `both`; default `user`); see the "Subagent Agent Resolution (Pi)"
-   section in the delegate reference for how the dispatcher verifies the
-   named agent exists in `~/.pi/agent/agents/` (or `.pi/agents/` when
-   scope includes `project`).
+   backend is `pi_subagent`, the packet must also carry the resolved logical
+   role/profile and `subagent_scope` (`user`, `project`, or `both`; default
+   `user`). Resolve the effective Nico profile and lifecycle through
+   `$subagent-orchestration` before Build.
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
 
@@ -297,6 +297,7 @@ for future retrospectives.
 
 - If the implementation plan becomes invalid, hand off to `$execution-delivery` (plan mode) to revise sequencing.
 - If the plan artifact or hash is missing/stale, hand off to `$execution-delivery` (plan mode) before any repair or code change.
+- If the delegated runtime, role, lifecycle, or context policy is unclear, hand off to `$subagent-orchestration` before implementation.
 - If scope expands or affected contracts are unclear, hand off to `codebase-analysis` (impact mode).
 - If `execution_target=current_session` implementation completes, hand off to
   `prepare-commit` when the user requests commit preparation.
@@ -315,8 +316,10 @@ Answer in the user's language unless they request otherwise. Use concise progres
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
-- subagent_name: `<agent registry name, when backend=pi_subagent>`
-- subagent_scope: `user` | `project` | `both` (Pi only)
+- logical_role: `<resolved by $subagent-orchestration when target=subagent>`
+- subagent_scope: `user` | `project` | `both` (Pi/Nico only)
+- context_policy: `fresh` | `fork` | `retained_resume`
+- lifecycle_policy: `<foreground/background, timeout, status/wait, stop/resume, failure handling>`
 - attempt: `1` | `2`
 
 ## Implemented Scope

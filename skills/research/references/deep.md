@@ -137,6 +137,20 @@ Use the detailed fields in [evidence-matrix.md](evidence-matrix.md). As a shorth
 
 Confidence describes evidence strength, not how strongly the author prefers a conclusion.
 
+## Delegated Evidence Collection
+
+Deep research commonly crosses the context budget. Use
+`$subagent-orchestration` to send source collection to a fresh `researcher` and
+material-claim verification to a separate `evidence-auditor` when the source
+bundle, extraction logs, or evidence matrix would be large. The children may
+write bounded scratch/artifact files, but the Requirement Research Packet and
+its hash remain owned by this research run.
+
+Return claim/source indexes, confidence, contradictions, uncertainty, and
+artifact paths rather than raw pages or complete transcripts. Preserve the
+frozen input bundle and packet hash; all estimation reviewers must still receive
+one identical packet after the coordinator synthesizes and freezes it.
+
 ## Output Format
 
 Publish a Requirement Research Packet using [research-packet-template.md](research-packet-template.md), with evidence tracked via [evidence-matrix.md](evidence-matrix.md).

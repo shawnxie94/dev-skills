@@ -155,11 +155,13 @@ without switching harness.
 
 `execution_backend` selects the runtime adapter after
 `execution_target=subagent` has been chosen. The backend is decided by the
-current harness, not by preference:
+current harness, not by preference. Logical role selection, context policy,
+output shaping, and lifecycle recovery are owned by `$subagent-orchestration`; this
+reference preserves the plan packet and routing contract:
 
 - ZCode session (native `Agent` tool present): `execution_backend=zcode_subagent`. Never spawn Codex children from ZCode (`codex_subagent` is unavailable here), and never wrap ZCode subagents in MCP calls (`zcode_mcp` is a cross-harness bridge, not in-session delegation).
 - Codex session (`multi_agent_v1` tools present): `execution_backend=codex_subagent`, or `zcode_mcp` only when the ZCode MCP bridge tools are actually exposed in that session.
-- Pi session (native `subagent` tool present, spawned by the `pi-coding-agent` `subagent/` extension): `execution_backend=pi_subagent`. Never dispatch from Pi to ZCode or Codex children; the Pi `subagent` tool is the in-session delegation mechanism. The Pi child is a leaf executor and must not call the `subagent` tool again.
+- Pi session with Nico's native `subagent` tool present: `execution_backend=pi_subagent`. Never dispatch from Pi to ZCode or Codex children; the Pi `subagent` tool is the in-session delegation mechanism. The Pi child is a leaf executor unless the approved workflow explicitly grants bounded fanout.
 - Neither tool family is available: report a blocked handoff.
 
 All adapters execute the packet; no adapter's success declaration is the final
@@ -173,7 +175,7 @@ named tool.
 | `zcode_subagent` | Native `Agent` tool, one call per packet with a self-contained prompt | Foreground call blocks until the final message; `run_in_background` + `TaskOutput` (blocking) for long nodes; no polling | `SendMessage` to the same agent, once, with the complete repair packet | ZCode native child implementation and tests |
 | `codex_subagent` | `multi_agent_v1__spawn_agent` with one complete goal or assigned DAG node | `multi_agent_v1__wait_agent`; bounded wait, no busy polling | `multi_agent_v1__send_input` to the same agent, once, with the complete repair packet | Codex child implementation and internal verification |
 | `zcode_mcp` | `mcp__zcode_codex__zcode_dispatch` | `wait_ms` and terminal status; inspect with `zcode_status`, `zcode_messages`, or `zcode_diff` only when needed | `zcode_continue` once on the same task with the complete repair packet | ZCode code implementation and repository tests when explicitly available |
-| `pi_subagent` | `subagent` tool (single mode) with one complete goal or assigned DAG node; each call spawns an isolated `pi` process | Tool call blocks until the child process exits with its final message; no polling | Re-spawn a new `subagent` single-mode call with the complete repair packet, the source packet, and `attempt: 2` | Pi child implementation and repository tests |
+| `pi_subagent` | Nico `subagent` tool or `workflowScript` with one complete goal or assigned DAG node | Foreground result, `status`, `bg_wait`, or Fleet artifacts | Validated retained `resume`, otherwise one bounded repair dispatch | Pi + Nico child session and repository tests |
 
 ### `zcode_subagent`
 
@@ -246,54 +248,46 @@ ZCode session delegates — inside ZCode use `zcode_subagent`.
   coordinating session unless the adapter explicitly declares that capability
   and the approved plan authorizes it.
 
-### Subagent Agent Resolution (Pi)
+### Subagent Agent Resolution (Pi + Nico)
 
-The Pi `subagent` tool resolves the `agent` parameter by **name** from the
-user-level agent registry (`~/.pi/agent/agents/*.md`) and, when invoked with
-`agentScope: both` or `project`, the nearest project-level registry
-(`.pi/agents/*.md`). Each registry entry is a Markdown file with YAML
-frontmatter declaring `name`, `description`, optional `tools`, and optional
-`model`; the body becomes the subagent's appended system prompt. If the
-requested name does not appear in the resolved registry, the tool returns
-exit code `1` with stderr starting with `Unknown agent: "<name>"` — a hard
-dispatch failure, not a soft warning.
+The Pi/Nico adapter resolves a logical role to an effective agent profile
+from Nico builtins, installed package agents, and user/project registries.
+User/project definitions can shadow package builtins, so a role name alone is
+not proof of the effective tools, model, context, or acceptance policy. Inspect
+the live agent list/capabilities before a write run. If the requested profile is
+unavailable, treat dispatch as `blocked`, not as permission to guess another
+role.
 
-Because the registry is user-owned and may include custom agents (e.g.
-`luna-audit`, `code-review`, `release-bot`), the skill must not hardcode
-agent names. Resolve at dispatch time by following this sequence:
+The packet should carry both the logical role and, when the selected Pi
+adapter requires it, the resolved `subagent_name` and `subagent_scope`.
+Resolve at dispatch time:
 
-1. Read the packet's `subagent_name` (required when
-   `execution_backend=pi_subagent`). If absent, stop and report a missing
-   field — do not silently pick a default that may not exist on this
-   machine.
-2. Confirm the named agent exists in the registry. Prefer a one-line
-   pre-dispatch probe (list `~/.pi/agent/agents/*.md` and, when the packet
-   sets `subagent_scope: both|project`, also `.pi/agents/*.md`); match on
-   the `name` frontmatter field. If the probe is skipped, accept that
-   dispatch may fail and treat an `Unknown agent` result as `blocked`.
-3. Set `agentScope` from the packet's `subagent_scope` (`user` is the Pi
-   default and matches the bundled `subagent/` example; `both` is required
-   only when the named agent lives in `.pi/agents/`).
-4. Forward `subagent_name` and `subagent_scope` into the `subagent` tool
-   call alongside `task` and `cwd`. Do not invent additional arguments;
-   the tool ignores unknown fields and other options (model, thinking,
-   tools) come from the agent's own frontmatter, not the call site.
+1. Inspect Nico's live agent discovery/capability projection.
+2. Confirm that the selected profile provides the role's required tools,
+   context, write boundary, and output contract.
+3. Set `agentScope` from the packet's `subagent_scope` and forward only fields
+   supported by the installed Nico version.
+4. If an effective profile is missing or incompatible, return the discovered
+   names/capabilities and a visible blocker; do not silently pick a nearby
+   agent.
 
-Conventional mapping from packet contract to a known Pi agent name. These
-are the bundled `subagent/` example agents; treat them as the **suggested**
-mapping and let users override per packet:
+Conventional logical-role mapping for Pi/Nico; treat it as a suggested
+mapping and verify the effective profile at dispatch time:
 
-| Packet contract | Conventional Pi agent | Why |
+| Logical role | Conventional Pi/Nico agent | Why |
 |---|---|---|
-| `parallel_mode: read_only_parallel`, no writes | `scout` | Read-only recon, fast model, returns compressed context |
-| `parallel_mode: read_only_parallel`, planning only | `planner` | Read-only plan synthesis; must not edit |
-| Whole-goal `batch` implementation | `worker` | Full default tool set, isolated context, write-enabled |
-| `batch` followed by review | `reviewer` (then `worker` for repair) | Read-only review, then re-dispatch worker |
-| Audit-style bounded conclusion document | a user-defined `*-audit` agent | e.g. `luna-audit`: read-only, narrow write |
+| Local read-only reconnaissance | `scout` | Compressed files/lines/data-flow handoff |
+| External/document research | `researcher` | Source-aware research brief; requires web tools for web evidence |
+| Decision challenge | `oracle` | Independent objections and alternatives |
+| Whole-goal implementation | `worker` | Scoped writes and internal verification |
+| Code/plan review | `reviewer` | Independent findings; no writes by default |
+| Evidence/citation audit | `evidence-auditor` | Claim/source verification |
+| Command-heavy acceptance | `verifier` | Optional role; use only when needed |
 
-User-defined agents override these conventions when they exist. Always
-re-verify the name against the live registry; an agent file deleted from
-`~/.pi/agent/agents/` must not be silently substituted.
+User/project agents may override these conventions. Existing `planner` and
+`delegate` profiles are compatibility/orchestration profiles, not replacements
+for the canonical role contract. Always re-verify the effective profile; a
+missing or shadowed agent must not be silently substituted.
 
 **Unknown-agent handling.** If dispatch returns `Unknown agent: "<name>"`,
 treat the task as `blocked`, not `failed`. The blocker message must list the
@@ -305,43 +299,36 @@ missing agent, pick an existing one, or switch `execution_target` to
 ### `pi_subagent`
 
 Pi sessions only; unavailable from ZCode or Codex. The coordinating session
-runs the `pi-coding-agent` with the `subagent/` extension loaded, exposing the
-native `subagent` tool.
+runs Pi with the Nico `subagent` extension loaded, exposing native foreground,
+background, workflow, status, steering, and retained-resume operations.
 
-- Dispatch through the `subagent` tool in single mode:
-  `{ agent, task, cwd, agentScope }`. The `agent` field must come from the
-  packet's `subagent_name` (see "Subagent Agent Resolution (Pi)"); never
-  guess. The `agentScope` field follows the packet's `subagent_scope`
-  (default `user`). The `task` must be a self-contained prompt carrying the
-  complete task packet (or its file path plus a one-paragraph objective),
-  the canonical plan path, and every command the child must run. A fresh
-  `pi` subagent starts with no conversation context, so the prompt must not
-  rely on session history or shorthand established earlier.
-- Choose the agent by the packet's `required_capabilities`,
-  `write_ownership`, and `parallel_mode`, not by ad-hoc preference. See the
-  conventional mapping table in "Subagent Agent Resolution (Pi)"; the
-  registry on the host machine is the source of truth, not the
-  convention.
-- The tool call blocks until the child `pi` process exits and returns its
-  final message; that message is the terminal result. For concurrent
-  `parallel_dag` dispatch, issue multiple `subagent` calls in one message so
-  they run in parallel, or use the tool's `tasks` array (max 8 tasks, 4
-  concurrent). Do not busy-poll.
+- Dispatch through Nico's `subagent` tool or `workflowScript`. The `agent`
+  field must come from the resolved packet role/profile; never guess. The
+  `agentScope` field follows `subagent_scope` (default `user`). The task must
+  be self-contained: include the complete packet or its path, canonical plan,
+  commands, exclusions, and final result contract. Choose `fresh`, `fork`, or
+  a validated retained `resume` explicitly when the default could change
+  behavior.
+- Choose the profile by logical role, required capabilities,
+  `write_ownership`, and `parallel_mode`, not by ad-hoc preference. Nico's
+  live discovery and capability projection are authoritative.
+- Use a blocking foreground child only when the coordinator needs an immediate
+  result. Background children require an exact run identity and a status/wait
+  path; do not treat returning control to the parent as completion. For
+  workflows, use stable keys and await or return every child promise.
 - Require the final message to state `completed`, `blocked`, or `failed`,
   plus changed files, tests, deviations, blockers, and `attempt`. The child's
   final message is visible only to the coordinator, not to the user — relay
   the outcome after acceptance.
 - Only after `completed`, run the coordinator's acceptance. If it fails,
-  re-spawn a new single-mode `subagent` call with the complete consolidated
-  repair packet, the source packet, and `attempt: 2`. Unlike ZCode/Codex
-  adapters, a Pi subagent is an isolated process with no resumed context, so
-  the repair re-dispatch must be fully self-contained: all findings, failed
-  checks, expected corrections, and the same overall acceptance. A second
-  failure or unresolved blocker goes to the user; never send piecemeal repair
-  prompts.
-- Pi subagents inherit the dispatching session's active model and thinking
-  level unless the agent definition sets `model`; account for this when
-  selecting agents with specific cost or capability requirements.
+  prefer a retained child `resume` only when Nico reports the child resumable
+  and the partial state is safe. Otherwise issue one complete repair packet
+  with `attempt: 2`. A retained resume starts a new turn from a persisted
+  session; it is not in-flight HTTP recovery. A second failure or unresolved
+  blocker goes to the user.
+- Pi/Nico model, thinking, fallback, timeout, output, and acceptance settings
+  are resolved from the effective profile and call contract. Preserve any
+  user-selected model/provider/runtime exactly; never silently substitute.
 
 The adapter contract is:
 
@@ -517,8 +504,10 @@ updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
 execution_backend: zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
-subagent_name: <required when execution_backend=pi_subagent; agent registry name>
-subagent_scope: user | project | both  # required when execution_backend=pi_subagent; defaults to user
+logical_role: <required for a subagent; resolved by $subagent-orchestration>
+subagent_scope: user | project | both  # Pi/Nico only; defaults to user
+context_policy: fresh | fork | retained_resume
+lifecycle_policy: <foreground/background, timeout, status/wait, stop/resume, failure handling>
 acceptance_scope: batch | node_and_batch
 attempt_policy:
   max_attempts: 2
@@ -671,8 +660,10 @@ Answer in the user's language unless they request otherwise. Prefer:
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
-- subagent_name: `<agent registry name, required when backend=pi_subagent>`
-- subagent_scope: `user` | `project` | `both` (Pi only)
+- logical_role: `<resolved by $subagent-orchestration>`
+- subagent_scope: `user` | `project` | `both` (Pi/Nico only)
+- context_policy: `fresh` | `fork` | `retained_resume`
+- lifecycle_policy: `<foreground/background, timeout, status/wait, stop/resume, failure handling>`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`

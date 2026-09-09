@@ -250,8 +250,10 @@ appropriate:
 - orchestration_mode: batch | parallel_dag
 - execution_target: pending | current_session | subagent
 - execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
-- subagent_name: <agent registry name, required when backend=pi_subagent at delegate time>
-- subagent_scope: user | project | both (Pi only; default user)
+- logical_role: <resolved by $subagent-orchestration when execution_target=subagent>
+- subagent_scope: user | project | both (Pi/Nico only; default user)
+- context_policy: fresh | fork | retained_resume (when supported; resolved by $subagent-orchestration)
+- lifecycle_policy: <foreground/background, timeout, status/wait, stop/resume, and failure handling>
 - user_approval: <pending|approved>
 
 ## Plan Artifact

@@ -30,9 +30,22 @@ Decision rules:
 - Keep depth proportional to decision cost.
 - One canonical artifact per mode: `brief` produces a research brief in chat (or the configured document-artifact path); `deep` produces one Requirement Research Packet plus a short Decision Card. Do not emit duplicate summaries of the same facts.
 
+## Delegated Research
+
+When source material, extraction output, or verification logs are large enough to
+threaten the coordinator's context, use `$subagent-orchestration` to delegate a
+`researcher` or `evidence-auditor`. The child returns bounded claims, citations,
+uncertainties, and artifact references; the coordinating research run remains
+responsible for source reconciliation and the final brief/packet.
+
+Use `fresh` context for independent research and audit. Prefer durable or
+file-only output for large reports. Do not paste raw source dumps or complete
+child transcripts into the canonical research artifact.
+
 ## Handoff Map
 
 - `brief` → product scope is ready: `$write-prd`; technical options only: `$write-trd`; concrete change with unclear blast radius: `codebase-analysis` (impact).
+- `brief` → broad/context-heavy evidence collection: `$subagent-orchestration` with `researcher` and, when claims matter, `evidence-auditor`.
 - `brief` → formal multi-source investigation needed: escalate to `deep` mode in this skill.
 - `deep` → product scope and acceptance intent ready: `$write-prd`; technical direction needed: `$write-trd`; frozen estimation-ready packet: `delivery-estimation` (review mode, one reviewer per run).
 - `deep` → existing-system blast radius still unclear: `codebase-analysis` (orientation, then impact in a separate step).
