@@ -12,13 +12,13 @@ python3 <dev-skills>/scripts/record_skill_run.py \
   --friction codegraph-no-index
 ```
 
-The default log is `~/.codex/dev-skills-runs.jsonl`. Set `DEV_SKILLS_RUN_LOG` or pass `--path` to use another local file. The record intentionally stores only outcome metadata, short friction tags, and optional short feedback; do not put the original prompt, source code, secrets, or sensitive business data in it.
+The default log is per runtime: `~/.pi/agent/dev-skills-runs.jsonl` for pi, `~/.codex/dev-skills-runs.jsonl` for Codex, `~/.zcode/dev-skills-runs.jsonl` for ZCode. Set `DEV_SKILLS_RUN_LOG` or pass `--path` to use another local file; `--dry-run` prints the record without writing. The record intentionally stores only outcome metadata, short friction tags, and optional short feedback; do not put the original prompt, source code, secrets, or sensitive business data in it.
 
 Generate a retrospective summary:
 
 ```bash
 python3 <dev-skills>/scripts/summarize_skill_runs.py \
-  --path ~/.codex/dev-skills-runs.jsonl \
+  --all-runtimes \
   --since-days 30
 ```
 

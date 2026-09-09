@@ -10,6 +10,10 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from record_skill_run import runtime_log_paths  # noqa: E402
+
 
 def parse_time(value: str) -> datetime | None:
     try:
@@ -41,7 +45,7 @@ def read_events(path: Path, since_days: int | None) -> tuple[list[dict], int]:
     return events, malformed
 
 
-def markdown(events: list[dict], path: Path, malformed: int) -> str:
+def markdown(events: list[dict], paths: list[Path], malformed: int) -> str:
     by_skill: dict[str, list[dict]] = defaultdict(list)
     friction = Counter()
     for event in events:
@@ -51,7 +55,7 @@ def markdown(events: list[dict], path: Path, malformed: int) -> str:
     lines = [
         "# dev-skills Run Summary",
         "",
-        f"Source: `{path}`",
+        "Sources: " + ", ".join(f"`{path}`" for path in paths),
         f"Recorded runs: {len(events)}",
     ]
     if malformed:
@@ -73,15 +77,42 @@ def markdown(events: list[dict], path: Path, malformed: int) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Summarize dev-skills JSONL run records.")
-    parser.add_argument("--path", type=Path, required=True)
+    parser.add_argument(
+        "--path",
+        type=Path,
+        action="append",
+        help="JSONL log path; repeatable, or use --all-runtimes",
+    )
+    parser.add_argument(
+        "--all-runtimes",
+        action="store_true",
+        help="read the default log of every known runtime (codex, pi, zcode)",
+    )
     parser.add_argument("--since-days", type=int, default=30)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.since_days < 0:
         parser.error("--since-days must be non-negative")
 
-    events, malformed = read_events(args.path.expanduser(), args.since_days)
-    output = markdown(events, args.path.expanduser(), malformed)
+    paths: list[Path] = []
+    if args.all_runtimes:
+        paths.extend(runtime_log_paths())
+    if args.path:
+        paths.extend(path.expanduser() for path in args.path)
+    if not paths:
+        parser.error("pass --path or --all-runtimes")
+
+    events: list[dict] = []
+    malformed = 0
+    existing: list[Path] = []
+    for path in paths:
+        if not path.is_file():
+            continue
+        existing.append(path)
+        found, bad = read_events(path, args.since_days)
+        events.extend(found)
+        malformed += bad
+    output = markdown(events, existing or paths, malformed)
     if args.output:
         args.output.expanduser().write_text(output, encoding="utf-8")
         print(f"Wrote summary -> {args.output.expanduser()}")

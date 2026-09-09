@@ -87,11 +87,11 @@ python3 scripts/record_skill_run.py \
   --next-handoff write-trd
 ```
 
-默认记录到 `~/.codex/dev-skills-runs.jsonl`，也可以通过 `DEV_SKILLS_RUN_LOG` 或 `--path` 改为其他本地文件。记录只包含结果元数据、简短 friction tag 和可选短反馈，不应写入原始 prompt、源码、密钥或业务数据。使用以下命令生成近期开工情况摘要：
+默认按当前 runtime 记录：pi 写 `~/.pi/agent/dev-skills-runs.jsonl`，Codex 写 `~/.codex/dev-skills-runs.jsonl`，ZCode 写 `~/.zcode/dev-skills-runs.jsonl`；`DEV_SKILLS_RUN_LOG` 或 `--path` 可覆盖，`--dry-run` 只打印不写。记录只包含结果元数据、简短 friction tag 和可选短反馈，不应写入原始 prompt、源码、密钥或业务数据。使用以下命令生成近期开工情况摘要（跨 runtime 汇总用 `--all-runtimes`）：
 
 ```bash
 python3 scripts/summarize_skill_runs.py \
-  --path ~/.codex/dev-skills-runs.jsonl \
+  --all-runtimes \
   --since-days 30
 ```
 

@@ -80,6 +80,24 @@ def main() -> int:
         for reference in unknown:
             errors.append(f"{name}: unknown skill reference ${reference}")
 
+        # Reference files are loaded on demand, so a stale $skill or a dangling
+        # relative link there is invisible until an agent follows it mid-task.
+        for doc in sorted(skill_dir.rglob("*.md")):
+            text = doc.read_text(encoding="utf-8")
+            rel = doc.relative_to(skill_dir)
+            for reference in sorted(set(re.findall(r"\$([a-z][a-z0-9-]*)", text))):
+                if reference not in skill_names and reference not in EXTERNAL_SKILLS:
+                    errors.append(f"{name}/{rel}: unknown skill reference ${reference}")
+            for link in re.findall(r"\]\(([^)#\s]+)", text):
+                if "://" in link or link.startswith("mailto:"):
+                    continue
+                if "<" in link or ">" in link:
+                    # Documentation placeholders such as <slug>.md are not links.
+                    continue
+                target = (doc.parent / link).resolve()
+                if not target.exists():
+                    errors.append(f"{name}/{rel}: dangling link {link}")
+
     readme_text = README.read_text(encoding="utf-8") if README.is_file() else ""
     readme_skills = {
         name for name in re.findall(r"`([a-z][a-z0-9-]+)`", readme_text) if name in skill_names
