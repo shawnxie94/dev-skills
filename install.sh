@@ -96,8 +96,8 @@ case "$TARGET" in
     ;;
   pi)
     SKILLS_DST="$PI_HOME/agent/skills"
-    # Pi has no CodeGraph integration yet; only link skills, leave the binary
-    # alone and skip MCP auto-configuration.
+    # Pi has no CodeGraph MCP client: skills call the `codegraph` CLI directly.
+    # Skip MCP auto-configuration and leave the binary alone.
     CODEGRAPH_TARGET=""
     ;;
   *)

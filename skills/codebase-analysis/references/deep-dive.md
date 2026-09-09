@@ -24,6 +24,7 @@ Mode reference for the `$codebase-analysis` skill. Read this file only after the
    - Inspect `initialized`, `pendingChanges`, `index.state`, `index.pendingRefs`, `index.reindexRecommended`.
    - Not initialized → report it, then initialize when indexing is in scope (user asked for a deep dive, so it usually is): `cd <repo-root> && codegraph init .`
    - Pending changes → `codegraph sync <repo-root> --quiet` before retrieval; `reindexRecommended` → `codegraph index <repo-root> --quiet`.
+   - Stale lock → `codegraph unlock <repo-root>`. CLI unavailable → say so and fall back to live-file reading; do not claim graph-backed coverage. In pi, the CLI is the only path (no MCP client).
 3. Decide the notes destination early (see Stage 4).
 
 ### Stage 1 — Fast recon (live files)
@@ -36,10 +37,11 @@ Mode reference for the `$codebase-analysis` skill. Read this file only after the
 
 ### Stage 2 — Architecture survey with CodeGraph
 
-Use `codegraph_explore` (MCP) or the CLI (`codegraph explore "<question>" --path <root>`) with questions, plus targeted primitives:
+Use `codegraph explore "<question>" --path <root>` (CLI; where the host wires CodeGraph's MCP server, `codegraph_explore` is the equivalent) with questions, plus targeted primitives:
 
 - "What are the main components and how do they relate?" → layering, directories
 - `codegraph query <symbol>` — symbol lookup
+- `codegraph node <symbol>` — one symbol's source plus caller/callee trail
 - `codegraph callers/callees <symbol>` — direction of dependency/flow (use this to *prove* layering rather than assuming it from folder names)
 - `codegraph impact <symbol>` — blast radius / core-ness signal (the symbol with 100+ callers is likely the heart)
 

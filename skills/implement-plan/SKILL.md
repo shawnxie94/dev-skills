@@ -14,6 +14,9 @@ re-plan, create a DAG, or silently change who executes the work.
 
 - Follow the plan, but route material changes back to planning when new
   evidence invalidates it.
+- Inside the approved scope, prefer the minimum viable implementation that
+  satisfies acceptance (see Minimum Viable Implementation Ladder); this never
+  authorizes shrinking the approved scope.
 - In `batch`, implement the complete approved goal in one active goal and
   return only after the whole goal reaches a final state.
 - In `parallel_dag`, implement only the assigned node and its explicit node
@@ -210,6 +213,36 @@ Before implementation, choose the lightest protection mode that fits the task:
 
 If no test is practical, state the manual verification path and residual risk before editing.
 
+## Minimum Viable Implementation Ladder
+
+Inside the approved scope, prefer the smallest implementation that satisfies the
+plan's acceptance checks. Before writing new code, climb this ladder and stop at
+the first rung that solves the real problem:
+
+1. Does this need to exist at all? Drop speculative or unrequested work.
+2. Does the codebase already implement it? Reuse the existing helper, module, or pattern.
+3. Does the standard library provide it?
+4. Does the native platform or framework provide it?
+5. Does an already-installed dependency solve it?
+6. Can it be expressed as one clear line or a small local change?
+7. Only then: write the minimum new code that works.
+
+Scope authority is a hard boundary:
+
+- The ladder optimizes **how** the approved scope is implemented. It never
+  authorizes shrinking, skipping, deferring, or silently reinterpreting work
+  that the plan, Task Pack, or node acceptance requires.
+- If a rung suggests planned work is unnecessary or replaceable, do not decide
+  unilaterally. Report it as a scope finding and route back to
+  `$execution-delivery` (plan mode) or the coordinating agent. A silent scope
+  cut is a contract violation, not a saving.
+- The ladder never overrides the chosen Behavior Protection Mode. Never simplify
+  away validation, error handling, security, accessibility, migrations, or the
+  plan's required tests.
+- Record material ladder outcomes (reused component, dropped local abstraction,
+  stdlib or existing dependency instead of a new one) under `Plan Deviations`.
+  Keep trivial reuse decisions out of the report.
+
 ## Implementation Workflow
 
 1. Confirm inputs.
@@ -239,6 +272,14 @@ If no test is practical, state the manual verification path and residual risk be
      under the one goal. Keep all edits within the whole-goal ownership.
    - In `parallel_dag`, read the relevant files and implement only the assigned
      node. Keep all edits within node ownership.
+   - When the repository has a `.codegraph/` index, locate code through the
+     CodeGraph CLI before broad grep/read: `codegraph context "<task>"` or
+     `codegraph explore "<question>"`, then `codegraph impact <symbol>` and
+     `codegraph affected <files>` for blast radius. Verify graph output against
+     live files. If the CLI or index is unavailable, say so and fall back to
+     `rg` plus direct reads.
+   - Climb the Minimum Viable Implementation Ladder inside the selected scope;
+     it optimizes implementation, not scope.
    - Avoid opportunistic feature work, unrelated refactors, or new delegation.
 
 4. Run internal verification.

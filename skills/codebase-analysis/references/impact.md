@@ -21,7 +21,22 @@ Use the relevant context:
 - Data flow, cache keys, permissions, state transitions, generated artifacts, external integrations.
 - Existing tests, fixtures, e2e flows, CI checks, and manual validation paths.
 
-On an indexed project, use `codegraph impact <symbol>` and `codegraph affected <files...>` as the first retrieval pass, then verify the results against live files.
+## CodeGraph First Pass
+
+On an indexed project, run the graph before broad reading, then verify every
+result against live files:
+
+```bash
+codegraph status --json <repo-root>              # index verdict; declare it in the report
+codegraph impact <symbol> --path <repo-root>     # blast radius for a changed symbol
+codegraph affected <files...> --path <repo-root> # tests touched by changed files
+codegraph callers <symbol> --path <repo-root>    # incoming references
+```
+
+- `pendingChanges` → `codegraph sync <repo-root> --quiet` before trusting results; `index.reindexRecommended` or a partial index → `codegraph index <repo-root> --quiet`.
+- A stale lock blocks indexing: `codegraph unlock <repo-root>`.
+- No CLI, no index, or an unindexed project → say so explicitly and fall back to live-file tracing (`rg`, imports, call sites, tests). Never imply graph coverage that was not available.
+- The graph shows structure. Contracts, config, migrations, generated artifacts, and runtime behavior still need direct inspection.
 
 ## Analysis Workflow
 
@@ -62,6 +77,10 @@ Answer in the user's language unless they request otherwise. Use this structure 
 ## Change Summary
 
 <The proposed change, current diff, or behavior being analyzed>
+
+## Retrieval Basis
+
+<CodeGraph index verdict (indexed / stale / unindexed / CLI unavailable) and the calls used; live-file verification status>
 
 ## Direct Impact
 

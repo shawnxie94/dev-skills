@@ -24,7 +24,10 @@ Decision rules:
 
 ## Shared Rules (both modes)
 
-- Verify index or retrieval results against live files; never treat an index as a substitute for current-file facts. CodeGraph usage details live in [references/orientation.md](references/orientation.md) and [references/deep-dive.md](references/deep-dive.md); impact mode can use `codegraph impact` and `codegraph affected` on an indexed project.
+- Verify index or retrieval results against live files; never treat an index as a substitute for current-file facts.
+- CodeGraph is reached through its **CLI** (`codegraph ...`); that is the canonical path in every host, including pi, which exposes no MCP client. `codegraph_explore` / `codegraph_node` are MCP tool names available only where the host wires CodeGraph's MCP server (Claude Code, Codex); never call them by name elsewhere and never invent a tool name for a command you can run.
+- Declare index state before claiming graph-backed results: `codegraph status --json <repo-root>` (`initialized`, `pendingChanges`, `index.state`, `index.reindexRecommended`). A missing CLI, missing index, or stale index changes the report, not just the workflow.
+- CodeGraph usage details live in [references/orientation.md](references/orientation.md) and [references/deep-dive.md](references/deep-dive.md); impact mode starts with `codegraph impact` and `codegraph affected` on an indexed project.
 - Analyze only what was asked: a repository map, a deep reading of chosen core paths, or one concrete change — not the whole system plus every dependency.
 - Separate confirmed facts from leads and inferences.
 - Produce one artifact: an orientation map, an impact report, or a deep-dive note. Do not emit more than one.
