@@ -70,6 +70,21 @@ Model selection is a user decision, not an orchestration default:
   an explicit model change, do not resume that child under the old choice;
   start a new bounded dispatch when continuation is needed.
 
+## Model Routing Policy
+
+Resolve model and thinking settings separately from the logical role. When the
+shared `~/Developer/agents/subagent-policies.json` is available and its
+`recommendationEnabled` flag is true, use its `fast`/`balanced`/`deep` profile
+as a recommendation and validate the mapping for the actual runtime adapter.
+When recommendations are disabled, ignore the policy and use normal
+user/native model selection; direct subagent delegation remains available. Do
+not hard-code deployment model IDs in this skill. An explicit user-selected
+`provider/model` and thinking level always win; never silently switch provider,
+runtime, or fallback model. Keep persistent runtime ceilings separate from
+task-level `usageBudget`. See
+`references/model-routing.md` for the routing heuristic, Pi projection, and
+limit semantics.
+
 ## Side-Effect Preflight
 
 Classify the objective before choosing a role:
