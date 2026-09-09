@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Validate the repository-level contracts shared by dev-skills."""
+"""Validate the repository-level contracts shared by dev-skills.
+
+`--root` exists so the gate itself is testable: `tests/test_skill_contracts.py`
+points it at a temporary fixture and asserts that each check actually fails.
+"""
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS_DIR = ROOT / "skills"
-README = ROOT / "README.md"
 EXTERNAL_SKILLS = {"skill-installer"}
 
 # Descriptions are the only part of a skill that is always loaded, so they must
@@ -34,9 +37,11 @@ def frontmatter(path: Path) -> dict[str, str]:
     return values
 
 
-def main() -> int:
+def check(root: Path = ROOT) -> list[str]:
     errors: list[str] = []
-    skill_dirs = sorted(path for path in SKILLS_DIR.iterdir() if path.is_dir())
+    skills_dir = root / "skills"
+    readme = root / "README.md"
+    skill_dirs = sorted(path for path in skills_dir.iterdir() if path.is_dir()) if skills_dir.is_dir() else []
     skill_names = {path.name for path in skill_dirs}
 
     if not skill_dirs:
@@ -98,12 +103,22 @@ def main() -> int:
                 if not target.exists():
                     errors.append(f"{name}/{rel}: dangling link {link}")
 
-    readme_text = README.read_text(encoding="utf-8") if README.is_file() else ""
+    readme_text = readme.read_text(encoding="utf-8") if readme.is_file() else ""
     readme_skills = {
         name for name in re.findall(r"`([a-z][a-z0-9-]+)`", readme_text) if name in skill_names
     }
     for missing in sorted(skill_names - readme_skills):
         errors.append(f"README.md: skill {missing} is not listed")
+
+    return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=ROOT, help="repository root to check")
+    args = parser.parse_args(argv)
+    root = args.root.resolve()
+    errors = check(root)
 
     if errors:
         print("Skill contract check failed:")
@@ -111,7 +126,8 @@ def main() -> int:
             print(f"- {error}")
         return 1
 
-    print(f"Skill contract check passed: {len(skill_names)} skills")
+    skill_count = len([p for p in (root / "skills").iterdir() if p.is_dir()])
+    print(f"Skill contract check passed: {skill_count} skills")
     return 0
 
 
