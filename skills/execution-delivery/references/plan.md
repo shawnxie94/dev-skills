@@ -250,6 +250,8 @@ appropriate:
 - orchestration_mode: batch | parallel_dag
 - execution_target: pending | current_session | subagent
 - execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
+- subagent_name: <agent registry name, required when backend=pi_subagent at delegate time>
+- subagent_scope: user | project | both (Pi only; default user)
 - user_approval: <pending|approved>
 
 ## Plan Artifact

@@ -71,7 +71,13 @@ For an agent-brain Task Pack, verify all of these values before Build:
 5. The Task Pack's `allowed_paths`, acceptance checks, and write ownership are a bounded subset of the plan unit or whole-goal root.
 6. If `execution_target=subagent`, `execution_backend` is present and is one of
    `zcode_subagent`, `codex_subagent`, `zcode_mcp`, or `pi_subagent`, matching the
-   current harness; never switch the selected adapter.
+   current harness; never switch the selected adapter. When the selected
+   backend is `pi_subagent`, the packet must also declare `subagent_name`
+   (the agent registry name) and `subagent_scope` (`user`, `project`, or
+   `both`; default `user`); see the "Subagent Agent Resolution (Pi)"
+   section in the delegate reference for how the dispatcher verifies the
+   named agent exists in `~/.pi/agent/agents/` (or `.pi/agents/` when
+   scope includes `project`).
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
 
@@ -307,6 +313,8 @@ Answer in the user's language unless they request otherwise. Use concise progres
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
+- subagent_name: `<agent registry name, when backend=pi_subagent>`
+- subagent_scope: `user` | `project` | `both` (Pi only)
 - attempt: `1` | `2`
 
 ## Implemented Scope

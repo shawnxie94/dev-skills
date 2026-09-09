@@ -158,20 +158,82 @@ ZCode session delegates — inside ZCode use `zcode_subagent`.
   coordinating session unless the adapter explicitly declares that capability
   and the approved plan authorizes it.
 
+### Subagent Agent Resolution (Pi)
+
+The Pi `subagent` tool resolves the `agent` parameter by **name** from the
+user-level agent registry (`~/.pi/agent/agents/*.md`) and, when invoked with
+`agentScope: both` or `project`, the nearest project-level registry
+(`.pi/agents/*.md`). Each registry entry is a Markdown file with YAML
+frontmatter declaring `name`, `description`, optional `tools`, and optional
+`model`; the body becomes the subagent's appended system prompt. If the
+requested name does not appear in the resolved registry, the tool returns
+exit code `1` with stderr starting with `Unknown agent: "<name>"` — a hard
+dispatch failure, not a soft warning.
+
+Because the registry is user-owned and may include custom agents (e.g.
+`luna-audit`, `code-review`, `release-bot`), the skill must not hardcode
+agent names. Resolve at dispatch time by following this sequence:
+
+1. Read the packet's `subagent_name` (required when
+   `execution_backend=pi_subagent`). If absent, stop and report a missing
+   field — do not silently pick a default that may not exist on this
+   machine.
+2. Confirm the named agent exists in the registry. Prefer a one-line
+   pre-dispatch probe (list `~/.pi/agent/agents/*.md` and, when the packet
+   sets `subagent_scope: both|project`, also `.pi/agents/*.md`); match on
+   the `name` frontmatter field. If the probe is skipped, accept that
+   dispatch may fail and treat an `Unknown agent` result as `blocked`.
+3. Set `agentScope` from the packet's `subagent_scope` (`user` is the Pi
+   default and matches the bundled `subagent/` example; `both` is required
+   only when the named agent lives in `.pi/agents/`).
+4. Forward `subagent_name` and `subagent_scope` into the `subagent` tool
+   call alongside `task` and `cwd`. Do not invent additional arguments;
+   the tool ignores unknown fields and other options (model, thinking,
+   tools) come from the agent's own frontmatter, not the call site.
+
+Conventional mapping from packet contract to a known Pi agent name. These
+are the bundled `subagent/` example agents; treat them as the **suggested**
+mapping and let users override per packet:
+
+| Packet contract | Conventional Pi agent | Why |
+|---|---|---|
+| `parallel_mode: read_only_parallel`, no writes | `scout` | Read-only recon, fast model, returns compressed context |
+| `parallel_mode: read_only_parallel`, planning only | `planner` | Read-only plan synthesis; must not edit |
+| Whole-goal `batch` implementation | `worker` | Full default tool set, isolated context, write-enabled |
+| `batch` followed by review | `reviewer` (then `worker` for repair) | Read-only review, then re-dispatch worker |
+| Audit-style bounded conclusion document | a user-defined `*-audit` agent | e.g. `luna-audit`: read-only, narrow write |
+
+User-defined agents override these conventions when they exist. Always
+re-verify the name against the live registry; an agent file deleted from
+`~/.pi/agent/agents/` must not be silently substituted.
+
+**Unknown-agent handling.** If dispatch returns `Unknown agent: "<name>"`,
+treat the task as `blocked`, not `failed`. The blocker message must list the
+discovered agent names from the registry so the user can either install the
+missing agent, pick an existing one, or switch `execution_target` to
+`current_session`. Do not retry with a guessed name and do not downgrade
+`pi_subagent` to another backend without user approval.
+
 ### `pi_subagent`
 
 Pi sessions only; unavailable from ZCode or Codex. The coordinating session
 runs the `pi-coding-agent` with the `subagent/` extension loaded, exposing the
 native `subagent` tool.
 
-- Dispatch through the `subagent` tool in single mode: `{ agent, task, cwd }`.
-  The task must be a self-contained prompt carrying the complete task packet
-  (or its file path plus a one-paragraph objective), the canonical plan path,
-  and every command the child must run. A fresh `pi` subagent starts with no
-  conversation context, so the prompt must not rely on session history or
-  shorthand established earlier.
-- Use an agent with write access for nodes that write code or run
-  state-changing commands; an analysis-only agent for read-only nodes.
+- Dispatch through the `subagent` tool in single mode:
+  `{ agent, task, cwd, agentScope }`. The `agent` field must come from the
+  packet's `subagent_name` (see "Subagent Agent Resolution (Pi)"); never
+  guess. The `agentScope` field follows the packet's `subagent_scope`
+  (default `user`). The `task` must be a self-contained prompt carrying the
+  complete task packet (or its file path plus a one-paragraph objective),
+  the canonical plan path, and every command the child must run. A fresh
+  `pi` subagent starts with no conversation context, so the prompt must not
+  rely on session history or shorthand established earlier.
+- Choose the agent by the packet's `required_capabilities`,
+  `write_ownership`, and `parallel_mode`, not by ad-hoc preference. See the
+  conventional mapping table in "Subagent Agent Resolution (Pi)"; the
+  registry on the host machine is the source of truth, not the
+  convention.
 - The tool call blocks until the child `pi` process exits and returns its
   final message; that message is the terminal result. For concurrent
   `parallel_dag` dispatch, issue multiple `subagent` calls in one message so
@@ -367,6 +429,8 @@ updated_at: <date>
 orchestration_mode: batch | parallel_dag
 execution_target: subagent
 execution_backend: zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
+subagent_name: <required when execution_backend=pi_subagent; agent registry name>
+subagent_scope: user | project | both  # required when execution_backend=pi_subagent; defaults to user
 acceptance_scope: batch | node_and_batch
 attempt_policy:
   max_attempts: 2
@@ -438,6 +502,8 @@ forbidden_writes:
 - Orchestration mode: <batch|parallel_dag>
 - Execution target: `subagent`
 - Execution backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
+- Subagent name: <required when backend=pi_subagent; must exist in `~/.pi/agent/agents/` or `.pi/agents/`>
+- Subagent scope: `user` | `project` | `both` (Pi only; default `user`)
 - Acceptance scope: <batch|node_and_batch>
 - Plan unit: <root for batch, or execution-plan-unit-id for parallel_dag>
 - Feature: <feature-id>
@@ -517,6 +583,8 @@ Answer in the user's language unless they request otherwise. Prefer:
 - orchestration_mode: `batch` | `parallel_dag`
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
+- subagent_name: `<agent registry name, required when backend=pi_subagent>`
+- subagent_scope: `user` | `project` | `both` (Pi only)
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`
