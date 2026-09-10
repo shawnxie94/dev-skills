@@ -45,6 +45,49 @@ agent filename. If a runtime cannot provide an equivalent capability, report a
 visible blocker or explicitly labelled degraded fallback; never silently switch
 runtime, model, or role.
 
+## Join Barrier
+
+After dispatch, resolve a `join_policy` before doing more coordinator work:
+
+- `required` is the default for a `batch`, a dependent DAG node, a shared-writer
+  task, or any dispatch with no explicitly declared independent coordinator work.
+- `opportunistic` is allowed only when the packet names disjoint work that can
+  proceed without the child result. The coordinator may do only that work, then
+  must wait before any dependent action or acceptance.
+- With `required`, the next coordinator action is the runtime's native bounded
+  wait. Do not run unrelated commands, emit progress as a substitute for
+  waiting, start acceptance, or send a final answer while the required child is
+  non-terminal.
+- A wait timeout is an observation, not a terminal result. Continue with a
+  bounded wait using the same run identity; do not treat timeout as success or
+  replay the original task. Only `completed`, `blocked`, `failed`, or an
+  explicitly documented stop state releases the barrier.
+
+The dispatch identity must stay within its runtime adapter. A Codex native
+`agent_id` is not a Codex App `threadId`; do not substitute App task wait tools
+for native subagent wait tools.
+
+## Acceptance Lock
+
+Treat dispatch and acceptance as separate phases:
+
+- Before dispatch, use `acceptance_phase=preflight`. Once a required child has
+  started, set `acceptance_phase=locked` and
+  `acceptance_barrier=child_terminal` for a batch or single dependent node.
+- While the required child is non-terminal, the coordinator must not run
+  acceptance commands, inspect the result as if it were complete, or emit a
+  final answer. A timeout, progress message, or callback notification does not
+  release the lock.
+- After the target child returns `completed`, the coordinator may perform node
+  acceptance. For a parallel DAG, set
+  `acceptance_barrier=all_required_children_terminal` before integration
+  acceptance; completed individual nodes do not by themselves release the
+  integration lock.
+- A runtime callback or stop hook may record the child's terminal payload or
+  apply a child-side quality gate. It only releases the coordinator's wait
+  barrier when the runtime reports a terminal state; it never replaces
+  coordinator acceptance.
+
 ## Session Model Gate
 
 Model selection is a user decision, not an orchestration default:
@@ -59,6 +102,11 @@ Model selection is a user decision, not an orchestration default:
   runtime adapter, workflow stage, or parallel lane. Pass it explicitly rather
   than relying on profile defaults, parent inheritance, tier recommendations,
   or fallback models.
+- For `codex_subagent`, the native dispatch schema has no provider parameter.
+  Preserve the confirmed model and thinking choice, record
+  `provider_resolution=host_inherited`, and do not claim that a provider was
+  forwarded. If the user requires a provider that the adapter cannot express,
+  report a blocker instead of silently changing the route.
 - Do not ask again for another child in the same conversation. If the user
   explicitly requests a model change, replace the session choice before the
   next dispatch; if the user asks to change it without naming a model, ask for

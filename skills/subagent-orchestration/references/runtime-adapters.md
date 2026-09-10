@@ -17,6 +17,13 @@ A retained resume may be pinned to its original model. After an explicit model
 change, do not resume that child under the old choice; start a new bounded
 dispatch when continuation is needed.
 
+Codex's native subagent schema has a model and reasoning-effort override but no
+separate provider field. For `codex_subagent`, record the provider as
+`host_inherited` when it is not explicitly selectable, preserve any explicit
+model and thinking choice, and report a blocker if the user requires a provider
+that the adapter cannot represent. Do not claim that a provider was forwarded
+when the native tool cannot carry it.
+
 ## Pi official SDK
 
 - Use the local SDK-backed `subagent` extension, which creates a persistent
@@ -43,6 +50,27 @@ dispatch when continuation is needed.
 - Preserve the user-selected model/provider/runtime exactly.
 - Send one complete goal or assigned plan node. The child is a leaf unless the
   approved contract explicitly grants orchestration capability.
+- `multi_agent_v1__spawn_agent` returns an `agent_id`; use that identity with
+  `multi_agent_v1__wait_agent` and `multi_agent_v1__send_input`. The Codex App
+  `mcp__codex_app__wait_threads` surface operates on `threadId` and is not a
+  substitute for native subagent waiting.
+- Native `wait_agent` is an event/mailbox wait: `timeout_ms` bounds this wait
+  call, but is not a child ETA, execution deadline, or terminal-state claim.
+  If it expires without a terminal result, keep the child `running` and wait
+  again with backoff using the same `agent_id`.
+- Use `join_policy=required` by default for a batch goal, a dependent node, or
+  when the coordinator has no declared disjoint work. After spawn, the next
+  action is one bounded `wait_agent` call. If it times out, wait again with
+  backoff on the same `agent_id`; do not busy-poll, start unrelated work, or
+  finalize while the required child remains non-terminal.
+- Use `join_policy=opportunistic` only when the packet explicitly names
+  independent work. Complete that work, then join before any dependent step or
+  coordinator acceptance.
+- When the host exposes a `SubagentStop` lifecycle hook, it can persist or
+  inspect the child's terminal message and enforce a child-side stop decision.
+  It is an observability/quality-gate callback, not a parent-resume webhook;
+  the coordinator still joins through native `wait_agent`. The current native
+  adapter does not expose a separate parent callback channel.
 - Normalize the final result into the runtime-neutral result shape; native
   message IDs and wait semantics stay in the adapter.
 

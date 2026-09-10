@@ -41,7 +41,22 @@ Issue, or workspace task file. This mode does not implement code.
   model must not be used after the user explicitly changes the session choice.
 - A subagent is a leaf executor and must not recursively call, spawn, or delegate to another subagent. Orchestration remains with the coordinating session; a child that discovers orchestration work must report the scope gap instead of creating another child.
 - Do not mark a subagent task ready unless the user or source artifact clearly indicates approval and the execution target is explicit.
-- A subagent handoff is one goal and one final return **per round**. The coordinating agent waits for a terminal `completed`, `blocked`, or `failed` result; only `completed` starts acceptance. A failed or partial round enters the convergence loop: the coordinator records `progress_verdict: progress` or `no_progress`, issues one consolidated round packet (`repair` or `advance`), and re-dispatches. The loop runs at most `round_policy.max_rounds` rounds (default 3). Exceeding the budget, a `no_progress` verdict, or an unresolved blocker escalates to the user. The coordinator may fix mechanical compile/lint/test errors itself inside the task's allowed paths, recorded as `root_fix`; feature work and design changes always return to the child.
+- A subagent handoff is one goal and one final return **per round**. Unless the
+  packet declares disjoint coordinator work, it uses `join_policy=required`:
+  set `acceptance_phase=locked` and make the coordinating agent's next action
+  after dispatch the runtime-native bounded wait. It must not run acceptance or
+  emit a final answer while the required child is non-terminal. The coordinator
+  waits for a terminal `completed`, `blocked`, or `failed` result; only
+  `completed` starts node acceptance, and integration acceptance additionally
+  requires `all_required_children_terminal`. A failed or partial round
+  enters the convergence loop: the coordinator records
+  `progress_verdict: progress` or `no_progress`, issues one consolidated round
+  packet (`repair` or `advance`), and re-dispatches. The loop runs at most
+  `round_policy.max_rounds` rounds (default 3). Exceeding the budget, a
+  `no_progress` verdict, or an unresolved blocker escalates to the user. The
+  coordinator may fix mechanical compile/lint/test errors itself inside the
+  task's allowed paths, recorded as `root_fix`; feature work and design changes
+  always return to the child.
 
 ## Inputs to Look For
 
@@ -223,10 +238,24 @@ Codex sessions only; unavailable from ZCode.
 - Call `multi_agent_v1__spawn_agent` once for a `batch` whole-goal packet, or
   once per runnable `parallel_dag` node. The child receives one active goal and
   must not return after an internal step.
-- Wait with `multi_agent_v1__wait_agent` for a bounded interval. Do not use
-  repeated status retrieval or busy polling while the agent is unchanged.
+- `join_policy=required` is the default for a batch goal, a dependent node, or
+  when no disjoint coordinator work is declared. Set `acceptance_phase=locked`
+  and, after
+  `multi_agent_v1__spawn_agent`, immediately call
+  `multi_agent_v1__wait_agent` with the returned `agent_id`. A timeout is not a
+  terminal result and `timeout_ms` is only the current wait window, not an ETA
+  or child deadline; continue with a bounded wait using the same ID and
+  backoff, without busy-polling, acceptance, or unrelated work.
+- `join_policy=opportunistic` is allowed only when the packet names independent
+  work. Finish that work, then wait before any dependent action or acceptance.
+- Do not use `mcp__codex_app__wait_threads` for a native subagent: it accepts an
+  App `threadId`, not the native `agent_id` returned by `spawn_agent`.
 - Require the final child response to include `completed`, `blocked`, or
   `failed`, plus changed files, tests, deviations, blockers, and `attempt`.
+- A configured Codex `SubagentStop` hook can persist or inspect the terminal
+  child result, but it does not replace the parent `wait_agent` barrier or
+  perform parent acceptance. This adapter has no separate parent webhook;
+  completion delivered to `wait_agent` is the callback-like signal.
 - Only after `completed`, run the coordinator's acceptance. If it fails or
   returns partial, send one complete consolidated round packet through
   `multi_agent_v1__send_input` to the same agent and continue the loop until
@@ -382,6 +411,10 @@ target does not need a task file. Use stable filenames such as
      packet. If no model was explicitly supplied, stop and ask the user for the
      exact `provider/model`; do not infer it from profile defaults or tier
      recommendations. Later new child packets reuse it without another prompt.
+     For `codex_subagent`, record `provider_resolution: host_inherited` because
+     the native spawn schema has no provider parameter; preserve the confirmed
+     model and thinking choice and report a blocker if the requested provider
+     cannot be represented.
      A current-session handoff leaves `execution_backend` unset or empty; never
      infer a backend from the word subagent.
    - If approval is ambiguous, write draft tasks only; do not place tasks in `ready`.
@@ -446,11 +479,16 @@ target does not need a task file. Use stable filenames such as
    - Require the subagent to return only after the whole `batch` goal or
      assigned DAG node has reached an explicit `completed`, `blocked`, or
      `failed` state, unless a human decision is required.
-   - The coordinating agent must use the runtime's bounded wait mechanism when
-     available, avoid repeated polling or unchanged-context reads, and not
-     start acceptance until the subagent explicitly returns `completed`.
-     `blocked` and `failed` are terminal reports for repair or escalation, not
-     acceptance passes.
+   - The coordinating agent must set `acceptance_phase=locked` and use the
+     runtime's bounded wait mechanism when available. The wait window is only
+     the duration of that observation call, not a child ETA or deadline. On a
+     timeout, keep the same run identity and wait again with backoff; do not
+     treat it as progress, completion, or permission to accept.
+   - While a required child is active, avoid repeated polling, unchanged-context
+     reads, acceptance commands, and unrelated work. Start node acceptance only
+     after the assigned child explicitly returns `completed`; for integration,
+     wait for all required children. `blocked` and `failed` are terminal reports
+     for repair or escalation, not acceptance passes.
    - Require blockers to preserve current branch state and explain the missing
      decision or failing check.
 
@@ -491,10 +529,18 @@ orchestration_mode: batch | parallel_dag
 execution_target: subagent
 execution_backend: zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
 selected_subagent_model: <explicit provider/model chosen for this conversation>
+provider_resolution: explicit | host_inherited | unavailable
 logical_role: <required for a subagent; resolved by $subagent-orchestration>
 subagent_scope: user | project | both  # Pi only; defaults to user
 context_policy: fresh | fork | retained_resume
 lifecycle_policy: <foreground/background, timeout, status/wait, stop/resume, failure handling>
+join_policy: required | opportunistic
+continue_while_child_active: none | declared_disjoint_only
+acceptance_phase: preflight | locked | node | integration
+acceptance_barrier: none | child_terminal | all_required_children_terminal
+wait_semantics: event_driven_mailbox
+wait_window_ms: <bounded wait call; not a child deadline>
+timeout_action: rewait_same_identity | run_declared_disjoint | escalate_user
 acceptance_scope: batch | node_and_batch
 round_policy:
   max_rounds: 3
@@ -650,10 +696,18 @@ Answer in the user's language unless they request otherwise. Prefer:
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
 - selected_subagent_model: `<session-selected provider/model; required when target=subagent>`
+- provider_resolution: `explicit` | `host_inherited` | `unavailable`
 - logical_role: `<resolved by $subagent-orchestration>`
 - subagent_scope: `user` | `project` | `both` (Pi only)
 - context_policy: `fresh` | `fork` | `retained_resume`
 - lifecycle_policy: `<foreground/background, timeout, status/wait, stop/resume, failure handling>`
+- join_policy: `required` | `opportunistic`
+- continue_while_child_active: `none` | `declared_disjoint_only`
+- acceptance_phase: `preflight` | `locked` | `node` | `integration`
+- acceptance_barrier: `none` | `child_terminal` | `all_required_children_terminal`
+- wait_semantics: `event_driven_mailbox`
+- wait_window_ms: `<bounded wait call; not a child deadline>`
+- timeout_action: `rewait_same_identity` | `run_declared_disjoint` | `escalate_user`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`
