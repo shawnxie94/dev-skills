@@ -71,6 +71,13 @@ when the native tool cannot carry it.
   It is an observability/quality-gate callback, not a parent-resume webhook;
   the coordinator still joins through native `wait_agent`. The current native
   adapter does not expose a separate parent callback channel.
+- A completed native child remains open and counts toward the concurrency limit
+  until `multi_agent_v1__close_agent` is called. Use
+  `reclaim_policy=close_after_acceptance_or_terminal_escalation`: preserve the
+  final status and evidence, close a `completed` child only after acceptance
+  passes, and close a terminal blocker when no resume is planned. If repair is
+  needed, reuse the same `agent_id` first and close it only after the repair
+  round is accepted or escalated.
 - Normalize the final result into the runtime-neutral result shape; native
   message IDs and wait semantics stay in the adapter.
 

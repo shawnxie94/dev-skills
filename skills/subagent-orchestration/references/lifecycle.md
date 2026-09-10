@@ -36,6 +36,22 @@ may have completed tool side effects even when its final model turn failed.
   safe restart path.
 - `timed_out`: do not assume no side effect; inspect the worktree and artifacts.
 
+## Resource reclamation
+
+- A terminal result is not necessarily a released runtime slot. `wait` only
+  observes the result; it does not close the child.
+- After acceptance, or after recording a terminal blocker with no resume plan,
+  invoke the runtime-native close operation when the adapter exposes one. The
+  default policy is
+  `reclaim_policy=close_after_acceptance_or_terminal_escalation`.
+- For a `completed` child, acceptance must pass before closure. If acceptance
+  fails and repair is possible, keep the child open for the repair round.
+- Keep the child open only when the next convergence round will reuse the same
+  run identity. Send the repair packet and wait again before accepting and
+  closing. Record the final result and evidence before closure.
+- Do not close a still-running child as routine cleanup; active cancellation
+  requires an explicit stop or escalation decision.
+
 ## Recovery policy
 
 A provider/network failure is not automatically an in-flight resume. For a

@@ -88,6 +88,26 @@ Treat dispatch and acceptance as separate phases:
   barrier when the runtime reports a terminal state; it never replaces
   coordinator acceptance.
 
+## Slot Reclaim
+
+Task completion and runtime resource reclamation are separate transitions:
+
+- `wait` observes a child result; it does not release the child runtime slot.
+- For runtimes where completed children remain open, the coordinator must call
+  the runtime-native close operation after acceptance, or after recording a
+  terminal blocker when no resume is planned. The default is
+  `reclaim_policy=close_after_acceptance_or_terminal_escalation`.
+- For a `completed` child, acceptance must pass before closure. If acceptance
+  fails and repair is possible, keep the child open for the repair round; do
+  not release the slot early.
+- Keep a terminal child open only when the next convergence round will reuse
+  that exact run identity. Send the consolidated repair packet, wait again,
+  accept, then close it. Do not spawn a replacement before deciding whether the
+  old identity is resumable or must be closed.
+- Record the final result and evidence before closing. Never close an active
+  child as routine cleanup; stopping an active child requires an explicit
+  cancellation or escalation decision.
+
 ## Session Model Gate
 
 Model selection is a user decision, not an orchestration default:

@@ -57,6 +57,13 @@ Issue, or workspace task file. This mode does not implement code.
   coordinator may fix mechanical compile/lint/test errors itself inside the
   task's allowed paths, recorded as `root_fix`; feature work and design changes
   always return to the child.
+- Terminal result collection does not release a subagent slot. For a `completed`
+  child, acceptance must pass before applying
+  `reclaim_policy=close_after_acceptance_or_terminal_escalation` and invoking
+  the runtime-native close operation. For an unrecoverable `blocked`/`failed`
+  result, record the terminal escalation before closing. Keep the same child
+  open only when a repair round will reuse its identity; close it after that
+  round is accepted or escalated.
 
 ## Inputs to Look For
 
@@ -256,6 +263,11 @@ Codex sessions only; unavailable from ZCode.
   child result, but it does not replace the parent `wait_agent` barrier or
   perform parent acceptance. This adapter has no separate parent webhook;
   completion delivered to `wait_agent` is the callback-like signal.
+- A completed child remains open and counts toward the concurrency limit until
+  `multi_agent_v1__close_agent` is called. Preserve its final result and
+  acceptance evidence before closing. Do not close it before a planned repair
+  round; reuse the same `agent_id` through repair, then close after acceptance
+  or escalation.
 - Only after `completed`, run the coordinator's acceptance. If it fails or
   returns partial, send one complete consolidated round packet through
   `multi_agent_v1__send_input` to the same agent and continue the loop until
@@ -541,6 +553,7 @@ acceptance_barrier: none | child_terminal | all_required_children_terminal
 wait_semantics: event_driven_mailbox
 wait_window_ms: <bounded wait call; not a child deadline>
 timeout_action: rewait_same_identity | run_declared_disjoint | escalate_user
+reclaim_policy: close_after_acceptance_or_terminal_escalation
 acceptance_scope: batch | node_and_batch
 round_policy:
   max_rounds: 3
@@ -708,6 +721,7 @@ Answer in the user's language unless they request otherwise. Prefer:
 - wait_semantics: `event_driven_mailbox`
 - wait_window_ms: `<bounded wait call; not a child deadline>`
 - timeout_action: `rewait_same_identity` | `run_declared_disjoint` | `escalate_user`
+- reclaim_policy: `close_after_acceptance_or_terminal_escalation`
 - approval: `<pending|approved>`
 
 If `execution_target=current_session`, report the direct `$implement-plan`
