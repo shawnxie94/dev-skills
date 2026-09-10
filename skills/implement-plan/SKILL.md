@@ -83,7 +83,7 @@ For an agent-brain Task Pack, verify all of these values before Build:
    current harness; never switch the selected adapter. When the selected
    backend is `pi_subagent`, the packet must also carry the resolved logical
    role/profile and `subagent_scope` (`user`, `project`, or `both`; default
-   `user`). Resolve the effective Nico profile and lifecycle through
+   `user`). Resolve the official Pi SDK child-session lifecycle through
    `$subagent-orchestration` before Build.
 
 If any preflight check fails, do not create files, do not infer missing hashes, and do not begin implementation. Report the exact missing or mismatched field and hand off to `$execution-delivery` (plan mode) or `agent-brain` task mode to repair the contract. A generic YAML pass is not sufficient: the linkage and artifact freshness checks are mandatory.
@@ -351,7 +351,7 @@ Answer in the user's language unless they request otherwise. Use concise progres
 - execution_target: `current_session` | `subagent`
 - execution_backend: `zcode_subagent` | `codex_subagent` | `zcode_mcp` | `pi_subagent`
 - logical_role: `<resolved by $subagent-orchestration when target=subagent>`
-- subagent_scope: `user` | `project` | `both` (Pi/Nico only)
+- subagent_scope: `user` | `project` | `both` (Pi only)
 - context_policy: `fresh` | `fork` | `retained_resume`
 - lifecycle_policy: `<foreground/background, timeout, status/wait, stop/resume, failure handling>`
 - attempt: `1` | `2`

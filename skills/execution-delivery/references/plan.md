@@ -251,7 +251,7 @@ appropriate:
 - execution_target: pending | current_session | subagent
 - execution_backend: pending | zcode_subagent | codex_subagent | zcode_mcp | pi_subagent
 - logical_role: <resolved by $subagent-orchestration when execution_target=subagent>
-- subagent_scope: user | project | both (Pi/Nico only; default user)
+- subagent_scope: user | project | both (Pi only; default user)
 - context_policy: fresh | fork | retained_resume (when supported; resolved by $subagent-orchestration)
 - lifecycle_policy: <foreground/background, timeout, status/wait, stop/resume, and failure handling>
 - user_approval: <pending|approved>

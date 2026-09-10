@@ -184,8 +184,8 @@ related: {}
   Context Pack、Experience episode、handoff 和证明流程完整性的文档按需读取，
   不作为每轮默认上下文。
 - `execution-delivery`（plan 模式）应携带 `orchestration_mode`、`plan_id`、`source_plan_sha256`、`base_commit`、`task_id`、`source_artifacts`、`source_hash`、`acceptance_ids` 和 `evidence_required`；执行目标和 backend 在交接时补齐。
-- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `execution_target`；当目标为 `subagent` 时还必须选择 `execution_backend=zcode_subagent|codex_subagent|zcode_mcp|pi_subagent`，同时传递 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离；逻辑角色、有效 profile、`subagent_scope`、上下文和生命周期由 `subagent-orchestration` 在交接时解析并记录。
-- subagent backend 是执行适配器：Codex 使用 `multi_agent_v1__spawn_agent` / `multi_agent_v1__wait_agent`，ZCode 原生会话使用 `Agent` 工具，Codex 经 MCP 桥驱动 ZCode 时使用 `zcode_dispatch` 及其状态/继续接口，Pi/Nico 会话使用原生 `subagent` 或 workflow 能力；运行时工具未提供时必须报告阻塞，不得假装已委派。
+- `execution-delivery`（delegate 模式）要原样传递这些字段，并明确 `execution_target`；当目标为 `subagent` 时还必须选择 `execution_backend=zcode_subagent|codex_subagent|zcode_mcp|pi_subagent`，同时传递 `required_skills`、`write_ownership`、`forbidden_writes`、依赖和 worktree 隔离；逻辑角色、上下文和生命周期由 `subagent-orchestration` 在交接时解析并记录。
+- subagent backend 是执行适配器：Codex 使用 `multi_agent_v1__spawn_agent` / `multi_agent_v1__wait_agent`，ZCode 原生会话使用 `Agent` 工具，Codex 经 MCP 桥驱动 ZCode 时使用 `zcode_dispatch` 及其状态/继续接口，Pi 使用官方 SDK-backed `subagent` 扩展的 spawn/status/stop/resume；运行时工具未提供时必须报告阻塞，不得假装已委派。
 - 远端或多 Agent 执行时，由 Task Pack 生成 Acceptance Pack；验收证据必须包含 `acceptance.json`、scope 结果和必要的测试/手工确认。文字声称、host goal 完成或子 Agent 返回成功都不能单独构成 Done。
 - 状态推进规则：`ready` 只表示依赖满足且可领取；`done` 只表示实现分支完成；只有 Acceptance Pack source hash 匹配且 evidence `overall=pass` 才能进入 `accepted`，下游任务据此 promotion。`skipped` 必须由用户拥有 residual risk，不能自动 promotion。
 - 多 Agent 并发前必须检查规范化后的 `write_ownership`、mutex、branch/worktree 和 base commit；共享 contract/schema/migration/generated artifact 默认单写者。

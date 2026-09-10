@@ -33,7 +33,7 @@ artifact references. Use `outputMode: file-only` or the runtime equivalent for
 large reports. The coordinator reads only the relevant sections instead of
 injecting complete source content.
 
-For Pi/Nico's built-in web roles, verify that the child has the required web
+For Pi's built-in web roles, verify that the child has the required web
 access tools. A foreground child does not automatically receive ambient parent
 extensions; use the configured child extension path or a background child when
 that is the supported path.

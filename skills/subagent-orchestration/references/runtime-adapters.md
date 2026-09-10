@@ -17,28 +17,28 @@ A retained resume may be pinned to its original model. After an explicit model
 change, do not resume that child under the old choice; start a new bounded
 dispatch when continuation is needed.
 
-## Pi + Nico
+## Pi official SDK
 
-- Resolve agents through Nico's discovered builtin, user, and project profiles.
-- Inspect capabilities before launch when the role, tools, model, or child
-  extension matters.
-- Use `async: false` only when the coordinator must block and consume the result
-  immediately. Use background execution for long research, builds, reviews, or
-  monitoring, then record the exact run identity and use status/wait.
+- Use the local SDK-backed `subagent` extension, which creates a persistent
+  `AgentSession` with the selected built-in coding tools.
+- Use `spawn` for a new child, `status`/`stop` with its `session_id`, and
+  `resume` with its persisted `session_file`.
+- The extension currently returns bounded inline text and session metadata; it
+  does not provide web tools, workflow fan-out, or background wait semantics.
 - Use `fresh` for independent read-only roles. Use `fork` only when inherited
   parent history is necessary. Use retained `resume` only when status reports a
   resumable persisted child.
-- Prefer `outputMode: "file-only"`, bounded output, structured output, and
-  explicit artifact paths for large results.
-- `researcher` and `evidence-auditor` require the child's web tools to be
-  registered when external web evidence is needed.
+- Keep child prompts and returned output bounded; persist large results in the
+  child session rather than copying them into the parent context.
+- External web evidence is not available through the minimal Pi child
+  extension; use an explicitly configured web-capable runtime when required.
 - A provider failure after tool side effects is a failed/paused lane, not an
   automatic replay. Capture the diff before a new bounded repair or resume.
 
 ## Codex
 
 - Use the native multi-agent spawn/wait/send tools exposed by the current
-  session. Do not call Pi/Nico tools through a bridge unless the execution
+  session. Do not call Pi tools through a bridge unless the execution
   contract explicitly selects that bridge.
 - Preserve the user-selected model/provider/runtime exactly.
 - Send one complete goal or assigned plan node. The child is a leaf unless the
