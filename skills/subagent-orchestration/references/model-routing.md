@@ -1,6 +1,7 @@
 # Model Routing Policy
 
 Use model routing as a deployment policy, not as part of a logical role definition.
+The logical model is the selection key; providers are ordered delivery routes.
 The shared policy source, when installed and enabled, is:
 
 ```text
@@ -16,17 +17,19 @@ skills must not hard-code provider or model IDs.
 ## Selection order
 
 1. Preserve an explicit user-selected `provider/model` and thinking level.
-2. If no explicit choice exists, recommend a profile and ask the user to
-   confirm the resolved model: `fast`, `balanced`, or `deep`; a profile is never
-   an authorization to change the user's selection.
-3. Resolve the selected role through the profile for the actual runtime adapter
-   (Pi, ZCode, Codex, or another adapter). A model configured only for another
-   runtime is not a valid choice.
-4. Apply the profile's thinking level and fallback only after checking that the
-   model supports them. Fallback is an availability recovery path, not a reason
-   to change task scope or silently cross runtimes.
-5. State the resolved model, thinking level, context policy, execution mode,
-   concurrency, and output contract in the delegation packet.
+2. If no explicit choice exists, recommend a profile and show its logical model,
+   primary `provider/model`, and ordered same-model routes. Ask the user to
+   confirm the exact primary `provider/model` and route policy; a profile is
+   never an authorization to change the user's selection.
+3. Resolve the logical model through the ordered provider routes for the actual
+   runtime adapter (Pi, ZCode, Codex, or another adapter). A route configured
+   only for another runtime is not a valid choice.
+4. Apply the profile's thinking level and try the next provider only for an
+   availability failure. Provider fallback must keep the same logical model;
+   never silently change the model, task scope, or runtime.
+5. State the logical model, selected route, thinking level, context policy,
+   execution mode, concurrency, fallback order, and output contract in the
+   delegation packet.
 
 ## Default routing heuristic
 
@@ -63,11 +66,15 @@ worktree, and an elapsed deadline with enough margin.
 For Pi, the native settings/projection is:
 
 - `~/.pi/agent/settings.json`: `subagents.defaultModel`,
-  `subagents.defaultThinking`, and `agentOverrides`. Do not enable
-  `modelScope` from a profile projection because it could reject an explicit
-  user-selected model; users may configure model scope independently.
+  `subagents.defaultThinking`, and `agentOverrides`. A profile projection may
+  emit provider/model route strings and same-model `fallbackModels`. Do not
+  enable `modelScope` from a profile projection because it could reject an
+  explicit user-selected model; users may configure model scope independently.
 - `~/.pi/agent/extensions/subagent/config.json`:
-  concurrency, spawn, async-run, and parallel limits.
+  concurrency, spawn, async-run, and parallel limits. Pi native fallback only
+  covers the retryable provider/model failures documented by the runtime (most
+  reliably before tool activity); Codex's native global config remains a single
+  active provider, so per-request fallback requires the upper orchestrator.
 
 `kb subagent use <profile> --runtime pi` may generate this projection. After a
 projection, `/reload` or a new Pi session is required. The generated runtime

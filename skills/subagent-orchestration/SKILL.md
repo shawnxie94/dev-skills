@@ -1,6 +1,6 @@
 ---
 name: subagent-orchestration
-description: Choose, dispatch, observe, and recover delegated work across Pi/Nico, Codex, ZCode, and other runtimes（子代理编排、角色选择、运行时适配、上下文卸载、恢复策略）. Owns roles, context-offload, runtime adapters, and handoff contracts; does not implement the task itself.
+description: Choose, dispatch, observe, and recover delegated work across Pi, Codex, ZCode, and other runtimes（子代理编排、角色选择、运行时适配、上下文卸载、恢复策略）. Owns roles, context-offload, runtime adapters, and handoff contracts; does not implement the task itself.
 ---
 
 # Subagent Orchestration
@@ -22,7 +22,7 @@ Every delegation must make these decisions explicit:
 1. **Logical role**: `scout`, `researcher`, `oracle`, `worker`, `reviewer`,
    `evidence-auditor`, or the later `verifier` role.
 2. **Runtime adapter**: the current harness and its actual delegation tool. Do
-   not infer Pi/Nico semantics from a generic word such as "subagent".
+   not infer Pi semantics from a generic word such as "subagent".
 3. **Context policy**: `fresh`, `fork`, or an approved retained `resume`.
 4. **Execution mode**: foreground/blocking or background/async, with explicit
    wait and observation behavior.
@@ -75,13 +75,14 @@ Model selection is a user decision, not an orchestration default:
 Resolve model and thinking settings separately from the logical role. When the
 shared `~/Developer/agents/subagent-policies.json` is available and its
 `recommendationEnabled` flag is true, use its `fast`/`balanced`/`deep` profile
-as a recommendation and validate the mapping for the actual runtime adapter.
-When recommendations are disabled, ignore the policy and use normal
-user/native model selection; direct subagent delegation remains available. Do
-not hard-code deployment model IDs in this skill. An explicit user-selected
-`provider/model` and thinking level always win; never silently switch provider,
-runtime, or fallback model. Keep persistent runtime ceilings separate from
-task-level `usageBudget`. See
+as a recommendation and validate the logical-model route mapping for the
+actual runtime adapter. When recommendations are disabled, ignore the policy
+and use normal user/native model selection; direct subagent delegation remains
+available. Do not hard-code deployment model IDs in this skill. An explicit
+user-selected `provider/model` and thinking level always win; when only a
+logical model is confirmed, provider fallback may try the ordered routes for
+that same model. Never silently switch model, runtime, or task scope. Keep
+persistent runtime ceilings separate from task-level `usageBudget`. See
 `references/model-routing.md` for the routing heuristic, Pi projection, and
 limit semantics.
 
@@ -166,14 +167,14 @@ verification patterns.
 
 Resolve runtime behavior before dispatch:
 
-- Pi with Nico uses the `subagent` tool, Nico agent discovery, background run
-  artifacts, `status`/`bg_wait`, steering, and guarded retained `resume`.
+- Pi uses the official SDK-backed `subagent` extension. It creates persistent
+  child sessions and supports explicit `status`, `stop`, and `resume` actions.
 - Forward the session-selected model explicitly at each new dispatch when the
   adapter supports model selection; an adapter that cannot honor it is a
   visible blocker, not a reason to fall back silently.
 - Codex and ZCode use their native actor APIs and their own wait/continue
   semantics.
-- A Pi retained resume is a new child turn from a persisted session, not a
+- A Pi resume is a new child turn from a persisted SDK session, not a
   guarantee that the original model HTTP request continues.
 - Provider failure after mutation is not permission to replay the whole task.
   Capture the partial diff, inspect terminal state, then choose a safe resume or
