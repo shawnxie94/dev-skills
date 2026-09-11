@@ -1,0 +1,4 @@
+interface:
+  display_name: "Free Web Search"
+  short_description: "No-key public web search and readable page extraction"
+  default_prompt: "Use $free-web-search to search current public-web sources and extract only the pages needed for verification."

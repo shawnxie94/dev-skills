@@ -134,6 +134,7 @@ related: {}
 | 场景 | Skill | 时机 | 主要产物 |
 | --- | --- | --- | --- |
 | 调研（brief/deep） | `research` | 想法或需求需要调研输入时。`brief` 模式用于原始想法、技术方向、业界实践、盲点和低成本决策；`deep` 模式用于跨业务流程、系统边界、合规或需要冻结正式输入的深度调研。 | brief：调研简报、可选方向、风险盲点；deep：Requirement Research Packet、证据矩阵、冻结估时工作项。 |
+| 开发资料检索 | `free-web-search` | 需要查询当前公开网页、官方文档、release notes 或原始资料，且不想依赖搜索 API Key 时。 | 结构化搜索结果、可控长度的可读正文和来源链接。 |
 | 交付估时（review/synthesis） | `delivery-estimation` | `review` 模式：Reviewer 基于完全相同的冻结输入和标准独立产出密封估时，并将模型作为主要变量交叉验证；`synthesis` 模式：Research Lead 汇总三份或更多密封估时、定位离散项并形成可信规划区间。 | review：逐工作项人月 O/M/P 与 PERT 估时、复用策略、P50/P80、机器可校验 JSON；synthesis：可比性校验、中位数/范围/离散度、复核项与共识报告。 |
 | PRD 沉淀 | `write-prd` | 需求内容已经讨论清楚或基本成型，需要沉淀为产品需求文档时。 | 目标、范围、用户场景、功能需求、非功能需求、验收标准和后续设计输入。 |
 | 交付就绪评估 | `delivery-readiness` | 正式跨阶段交接（PRD→TRD→计划→实现→验证→发布）、plan-linked/batch-linked 交付、高风险发布或迁移前的阶段门禁，循环评估直到 ready 或 blocked；非正式小改动不触发。 | 阶段门禁、需求/设计/计划追踪、稳定问题 ID、源文件哈希、修复循环和可追溯 readiness report。 |
