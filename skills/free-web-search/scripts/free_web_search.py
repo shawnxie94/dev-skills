@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.parse import urlparse
@@ -30,8 +31,64 @@ def accessed_at() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _domain_values(values: list[str]) -> tuple[str, ...]:
+    return tuple(
+        value.strip().lower().removeprefix("www.")
+        for item in values
+        for value in item.split(",")
+        if value.strip()
+    )
+
+
+def _host(url: str) -> str:
+    return (urlparse(url).hostname or "").lower().removeprefix("www.")
+
+
+def _matches_domain(url: str, domain: str) -> bool:
+    host = _host(url)
+    return host == domain or host.endswith(f".{domain}")
+
+
+def _canonical_url(url: str) -> str:
+    parsed = urlparse(url)
+    return parsed._replace(fragment="").geturl().rstrip("/").lower()
+
+
+def _prepare_results(
+    results: list[dict[str, object]],
+    domains: tuple[str, ...],
+    preferred_domains: tuple[str, ...],
+) -> list[dict[str, object]]:
+    seen: set[str] = set()
+    prepared: list[dict[str, object]] = []
+    for result in results:
+        href = str(result.get("href", ""))
+        key = _canonical_url(href)
+        if not href or key in seen:
+            continue
+        if domains and not any(_matches_domain(href, domain) for domain in domains):
+            continue
+        seen.add(key)
+        prepared.append(result)
+
+    if preferred_domains:
+        prepared.sort(
+            key=lambda result: next(
+                (
+                    index
+                    for index, domain in enumerate(preferred_domains)
+                    if _matches_domain(str(result.get("href", "")), domain)
+                ),
+                len(preferred_domains),
+            )
+        )
+    return prepared
+
+
 def search(args: argparse.Namespace) -> dict[str, object]:
     DDGS = load_ddgs()
+    domains = _domain_values(args.domains)
+    preferred_domains = _domain_values(args.prefer_domain)
     backends = (
         [args.backend]
         if args.backend != "auto"
@@ -39,24 +96,36 @@ def search(args: argparse.Namespace) -> dict[str, object]:
     )
     errors: list[str] = []
     for backend in backends:
-        try:
-            results = DDGS(timeout=args.timeout).text(
-                args.query,
-                region=args.region,
-                timelimit=args.timelimit,
-                max_results=args.max_results,
-                backend=backend,
-            )
-            results = [result for result in results if result.get("href")]
-            if results:
-                return {
-                    "query": args.query,
-                    "backend": backend,
-                    "accessed_at": accessed_at(),
-                    "results": results,
-                }
-        except Exception as exc:
-            errors.append(f"{backend}: {exc}")
+        for attempt in range(args.retries):
+            try:
+                results = DDGS(timeout=args.timeout).text(
+                    args.query,
+                    region=args.region,
+                    timelimit=args.timelimit,
+                    max_results=args.max_results,
+                    backend=backend,
+                )
+                results = _prepare_results(
+                    [result for result in results if result.get("href")],
+                    domains,
+                    preferred_domains,
+                )
+                if results:
+                    return {
+                        "query": args.query,
+                        "backend": backend,
+                        "accessed_at": accessed_at(),
+                        "filters": {
+                            "domains": list(domains),
+                            "prefer_domain": list(preferred_domains),
+                        },
+                        "results": results,
+                    }
+                break
+            except Exception as exc:
+                errors.append(f"{backend}: {exc}")
+                if attempt + 1 < args.retries:
+                    time.sleep(0.25 * (attempt + 1))
     detail = "; ".join(errors) if errors else "no results"
     raise RuntimeError(f"all search backends failed: {detail}")
 
@@ -162,7 +231,20 @@ def parser() -> argparse.ArgumentParser:
     search_parser.add_argument("--region", default="us-en")
     search_parser.add_argument("--timelimit", choices=("d", "w", "m", "y"))
     search_parser.add_argument("--backend", default="auto")
+    search_parser.add_argument(
+        "--domains",
+        action="append",
+        default=[],
+        help="limit results to domains; repeat or use comma-separated values",
+    )
+    search_parser.add_argument(
+        "--prefer-domain",
+        action="append",
+        default=[],
+        help="rank matching domains first; repeat or use comma-separated values",
+    )
     search_parser.add_argument("--timeout", type=int, default=15)
+    search_parser.add_argument("--retries", type=int, default=2, choices=range(1, 4))
     search_parser.set_defaults(handler=search)
 
     fetch_parser = subparsers.add_parser("fetch", help="extract readable content from a URL")
