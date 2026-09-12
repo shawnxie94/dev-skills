@@ -26,7 +26,9 @@ may have completed tool side effects even when its final model turn failed.
 
 ## Terminal-state policy
 
-- `completed`: coordinator still performs final acceptance.
+- `completed`: coordinator still performs final acceptance. Reject it when the
+  report is `no_evidence` — a completion claim with no changed file or no check
+  result — instead of treating the terminal state alone as success.
 - `blocked`: preserve the blocker and do not substitute an unapproved runtime,
   model, or role.
 - `failed`: capture error, partial side effects, and the exact retry boundary.

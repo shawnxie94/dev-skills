@@ -53,7 +53,11 @@ Issue, or workspace task file. This mode does not implement code.
   `progress_verdict: progress` or `no_progress`, issues one consolidated round
   packet (`repair` or `advance`), and re-dispatches. The loop runs at most
   `round_policy.max_rounds` rounds (default 3). Exceeding the budget, a
-  `no_progress` verdict, or an unresolved blocker escalates to the user. The
+  `no_progress` verdict, or an unresolved blocker escalates to the user. A child
+  result that claims completion without naming changed files and check outcomes
+  is `no_evidence`, not a finished round: re-dispatch once with the required
+  result fields, then escalate; never absorb it, and never widen its allowed
+  paths yourself (that is a scope change for the user to approve).
   coordinator may fix mechanical compile/lint/test errors itself inside the
   task's allowed paths, recorded as `root_fix`; feature work and design changes
   always return to the child.
@@ -506,7 +510,9 @@ target does not need a task file. Use stable filenames such as
 
 8. Define the round budget.
    - Record `round_policy.max_rounds` (default 3) in the packet; the loop runs
-     at most that many rounds.
+     at most that many rounds, counting every dispatch including an
+     unproductive one. Read the counter from the run state before claiming the
+     budget is exhausted.
    - After a failed or partial round, the coordinating agent judges `progress`
      or `no_progress` and creates one consolidated round packet containing all
      known findings, failed checks, expected corrections, and the same overall

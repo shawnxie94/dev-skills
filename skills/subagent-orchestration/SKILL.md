@@ -88,6 +88,31 @@ Treat dispatch and acceptance as separate phases:
   barrier when the runtime reports a terminal state; it never replaces
   coordinator acceptance.
 
+## Child-Result Evidence Gate
+
+A terminal child state is not a verified result. Classify what came back before
+accepting:
+
+- `evidence`: names the changed files and the checks it ran (commands plus
+  exit/count outcomes), or an explicit `blocked`/`failed` with a concrete reason.
+- `no_evidence`: a completion claim with no report, no changed file, or no check
+  result.
+
+`no_evidence` is neither acceptance nor a finished round, and the coordinator
+must never absorb that work silently: presenting absorbed work as delegated
+output misreports authorship and hides a failing runtime. Re-dispatch once with a
+consolidated packet stating the required result fields and the concrete
+deliverable; if that replacement is also `no_evidence`, stop and escalate to the
+user with the round ledger instead of spending the remaining rounds or finishing
+the work itself.
+
+Every dispatch consumes a round, including an unproductive one. Report the
+counter from the run state instead of asserting the budget is exhausted, and
+report which parts were child-produced versus coordinator self-fix. Remaining
+work that needs a scope change — a new file, a new dependency, bootstrap or
+test-harness wiring — is user-facing scope, not a coordinator self-fix; escalate
+it rather than widening the child's allowed paths yourself.
+
 ## Slot Reclaim
 
 Task completion and runtime resource reclamation are separate transitions:
@@ -197,7 +222,9 @@ Read `references/roles.md` before inventing a new role. The initial registry is:
 - `scout`: local read-only reconnaissance and compressed context handoff.
 - `researcher`: external/document research with source traceability.
 - `oracle`: independent decision challenge and blind-spot analysis.
-- `worker`: approved implementation and internal verification.
+- `worker`: approved implementation and internal verification. Its result counts
+  only when it names changed files and the checks it ran; a completion claim
+  with no report or no changed file is `no_evidence`, not a finished round.
 - `reviewer`: independent code/plan review, read-only by default.
 - `evidence-auditor`: independent claim/source/evidence verification.
 - `verifier`: reserved for command-heavy acceptance evidence when `reviewer` is
